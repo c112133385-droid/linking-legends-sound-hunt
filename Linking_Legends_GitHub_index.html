@@ -1,0 +1,3248 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linking Legends: The Sound Hunt | 連音傳奇：尋聲之旅</title>
+  <style>
+    :root {
+      --bg-page: #eef2f9;
+      --bg-card: #ffffff;
+      --bg-soft: #f8fafc;
+      --hero-start: #090d16;
+      --hero-mid: #161e38;
+      --hero-end: #1e2952;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --indigo: #4f46e5;
+      --indigo-dark: #4338ca;
+      --gold: #f59e0b;
+      --gold-dark: #b45309;
+      --gold-soft: #fef3c7;
+      --emerald: #059669;
+      --emerald-soft: #ecfdf5;
+      --crimson: #dc2626;
+      --crimson-soft: #fef2f2;
+      --text-main: #0f172a;
+      --text-sub: #475569;
+      --text-muted: #94a3b8;
+      --border: #e2e8f0;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --shadow-card: 0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 4px 10px -4px rgba(15, 23, 42, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.65;
+      padding-bottom: 70px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 18px;
+    }
+
+    /* Equalizer bars animation (from toeic_part_4_90.html) */
+    @keyframes eqPulse {
+      0%, 100% { transform: scaleY(0.28); }
+      50% { transform: scaleY(1); }
+    }
+    .eq-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 16px;
+      width: 22px;
+    }
+    .eq-bar {
+      width: 3px;
+      height: 100%;
+      background: #818cf8;
+      border-radius: 999px;
+      transform-origin: bottom;
+      transform: scaleY(0.28);
+      transition: transform 0.2s ease;
+    }
+    .eq-active .eq-bar:nth-child(1) { animation: eqPulse 0.75s ease-in-out infinite 0.05s; }
+    .eq-active .eq-bar:nth-child(2) { animation: eqPulse 0.55s ease-in-out infinite 0.20s; }
+    .eq-active .eq-bar:nth-child(3) { animation: eqPulse 0.85s ease-in-out infinite 0.10s; }
+    .eq-active .eq-bar:nth-child(4) { animation: eqPulse 0.65s ease-in-out infinite 0.30s; }
+    .eq-active .eq-bar:nth-child(5) { animation: eqPulse 0.70s ease-in-out infinite 0.15s; }
+
+    .mobile-audio-note {
+      width: 100%;
+      border: 1px solid rgba(251,191,36,.4);
+      border-radius: 8px;
+      padding: 8px 11px;
+      background: rgba(251,191,36,.12);
+      color: #fde68a;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    /* ==================== GAME HERO & HUD ==================== */
+    .game-header {
+      background: radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.16), transparent 45%),
+                  radial-gradient(circle at 15% 80%, rgba(245, 158, 11, 0.14), transparent 40%),
+                  linear-gradient(135deg, var(--hero-start) 0%, var(--hero-mid) 55%, var(--hero-end) 100%);
+      color: #fff;
+      padding: 26px 0 44px;
+      border-bottom: 2px solid rgba(245, 158, 11, 0.35);
+      box-shadow: 0 10px 30px rgba(9, 13, 22, 0.25);
+    }
+
+    .hud-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .quest-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .q-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #bae6fd;
+      border: 1px solid rgba(186, 230, 253, 0.2);
+    }
+
+    .q-tag.gold {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fde68a;
+      border-color: rgba(245, 158, 11, 0.45);
+    }
+
+    .game-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      background: linear-gradient(90deg, #ffffff 0%, #fde68a 60%, #7dd3fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    .game-subtitle {
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+
+    .player-hud {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      min-width: 260px;
+      backdrop-filter: blur(8px);
+    }
+
+    .hud-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .rank-label {
+      color: #fde68a;
+      font-weight: 700;
+    }
+
+    .xp-label {
+      color: #7dd3fc;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .xp-bar-bg {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .xp-bar-fill {
+      height: 100%;
+      width: 5%;
+      background: linear-gradient(90deg, #f59e0b, #38bdf8);
+      border-radius: 999px;
+      transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Voice & Teacher Control Strip */
+    .control-strip {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #e2e8f0;
+    }
+
+    .control-strip select {
+      background: #0f172a;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+      max-width: 240px;
+    }
+
+    .test-sound-btn {
+      background: rgba(99, 102, 241, 0.3);
+      color: #c7d2fe;
+      border: 1px solid rgba(129, 140, 248, 0.5);
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .test-sound-btn:hover {
+      background: rgba(99, 102, 241, 0.5);
+      color: #fff;
+    }
+
+
+    /* ==================== STAGE MAP ==================== */
+    .stage-map {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: -26px auto 26px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .stage-node {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 15px 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-node.locked {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      opacity: 0.78;
+      cursor: not-allowed;
+    }
+
+    .stage-node.unlocked:hover {
+      transform: translateY(-2px);
+      border-color: #93c5fd;
+    }
+
+    .stage-node.active {
+      border-color: var(--primary);
+      box-shadow: 0 12px 26px -6px rgba(37, 99, 235, 0.25);
+    }
+
+    .stage-node.cleared {
+      border-color: var(--emerald);
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+    }
+
+    .node-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .stage-badge {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .stage-node.locked .stage-badge {
+      background: #e2e8f0;
+      color: #64748b;
+    }
+
+    .stage-node.cleared .stage-badge {
+      background: var(--emerald-soft);
+      color: var(--emerald);
+    }
+
+    .node-status-icon {
+      font-size: 15px;
+    }
+
+    .node-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-main);
+      display: block;
+    }
+
+    .node-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* Toast Alert */
+    .game-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(90px);
+      background: #0f172a;
+      color: #fde68a;
+      border: 1px solid #f59e0b;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+      z-index: 999;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      max-width: 92vw;
+      text-align: center;
+    }
+
+    .game-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ==================== STAGE PANELS ==================== */
+    .stage-panel {
+      display: none;
+      animation: panelFade 0.32s ease;
+    }
+
+    .stage-panel.active {
+      display: block;
+    }
+
+    @keyframes panelFade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .quest-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 22px;
+    }
+
+    .quest-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .quest-header h2 {
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .reward-pill {
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--gold-soft);
+      color: var(--gold-dark);
+      border: 1px solid #fcd34d;
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+
+    .lore-box {
+      background: linear-gradient(90deg, #f8fafc 0%, #eff6ff 100%);
+      border-left: 4px solid var(--primary);
+      padding: 14px 18px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 14px;
+      color: var(--text-sub);
+      margin-bottom: 22px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 11px 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .btn:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-indigo {
+      background: var(--indigo);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-indigo:hover:not(:disabled) {
+      background: var(--indigo-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.28);
+    }
+
+    .btn-gold:hover:not(:disabled) {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+
+    .btn-emerald {
+      background: var(--emerald);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+    }
+
+    .btn-emerald:hover:not(:disabled) {
+      background: #047857;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--bg-soft);
+      border-color: #cbd5e1;
+    }
+
+    .btn-crimson {
+      background: var(--crimson);
+      color: #fff;
+    }
+
+    /* ==================== EMBEDDED TOEIC PART 4 AUDIO PLAYER ==================== */
+    .toeic-player-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin-bottom: 22px;
+    }
+
+    .tp-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .tp-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
+      padding: 2px 9px;
+      border-radius: 999px;
+      margin-bottom: 4px;
+    }
+
+    .tp-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .tp-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .tp-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .tp-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tp-timer {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .tp-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+
+    .tp-dot.live {
+      background: #10b981;
+      animation: blink 1s infinite;
+    }
+
+    .tp-speed-group {
+      display: inline-flex;
+      gap: 4px;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .speed-btn {
+      border: none;
+      background: transparent;
+      padding: 5px 10px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .speed-btn.active {
+      background: #fff;
+      color: #4338ca;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .tp-progress-track {
+      height: 7px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .tp-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #4f46e5;
+      transition: width 0.3s ease;
+    }
+
+    /* Blind Listening Curtain over Transcript in Stage 1 */
+    .transcript-vault {
+      position: relative;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      background: #fff;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .blind-curtain {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      padding: 24px 20px;
+      text-align: center;
+    }
+
+    .blind-curtain h4 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fde68a;
+      margin: 8px 0 4px;
+    }
+
+    .blind-curtain p {
+      font-size: 13px;
+      color: #cbd5e1;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    .transcript-body {
+      padding: 18px;
+      display: none;
+    }
+
+    .transcript-body.revealed {
+      display: block;
+    }
+
+    .para-block {
+      margin-bottom: 16px;
+    }
+
+    .para-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: #4f46e5;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+
+    .sentence-row {
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: #f8fafc;
+      margin-bottom: 6px;
+      font-size: 15px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .sentence-row:hover {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+    }
+
+    .sentence-row.playing {
+      background: #eef2ff;
+      border-color: #6366f1;
+      font-weight: 600;
+    }
+
+    /* Stage 1 MCQs */
+    .q-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-bottom: 16px;
+      background: #fff;
+    }
+
+    .q-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .opt-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .opt-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+
+    .opt-item:hover {
+      background: var(--bg-soft);
+      border-color: #93c5fd;
+    }
+
+    .opt-item.correct {
+      background: var(--emerald-soft);
+      border-color: var(--emerald);
+      color: #065f46;
+      font-weight: 700;
+    }
+
+    .opt-item.wrong {
+      background: var(--crimson-soft);
+      border-color: var(--crimson);
+      color: #991b1b;
+    }
+
+    .exp-drawer {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: #f1f5f9;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .exp-drawer.show {
+      display: block;
+    }
+
+    /* Stage 2 Dictation */
+    .step-bars {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .s-bar {
+      flex: 1;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--border);
+    }
+
+    .s-bar.done {
+      background: var(--emerald);
+    }
+
+    .s-bar.now {
+      background: var(--primary);
+    }
+
+    .hunter-input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      margin: 14px 0;
+      font-family: inherit;
+    }
+
+    .hunter-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .feedback-card {
+      display: none;
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    .feedback-card.show {
+      display: block;
+    }
+
+    .feedback-card.clue {
+      background: var(--gold-soft);
+      border: 1px solid #fcd34d;
+      color: #78350f;
+    }
+
+    .feedback-card.reveal {
+      background: var(--bg-soft);
+      border: 1px solid #cbd5e1;
+      color: var(--text-main);
+    }
+
+    .link-scroll {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.85;
+      padding: 14px 16px;
+      background: #fff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-sm);
+      margin: 10px 0;
+    }
+
+    .arc {
+      background: #fef3c7;
+      color: #b45309;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border-bottom: 2px solid #f59e0b;
+      font-weight: 800;
+    }
+
+    .word-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 10px 0;
+    }
+
+    .chip {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .chip.hit {
+      background: var(--emerald-soft);
+      color: #065f46;
+    }
+
+    .chip.miss {
+      background: var(--crimson-soft);
+      color: #991b1b;
+      text-decoration: underline wavy #dc2626;
+    }
+
+    /* Stage 3 Shadowing */
+    .echo-arena {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+
+    .rec-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .rec-live {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--crimson);
+    }
+
+    .rec-live.on {
+      display: inline-flex;
+    }
+
+    .blink-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--crimson);
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.25); }
+    }
+
+    /* Stage 3 pronunciation practice report */
+    .s3-accuracy-note { margin-top:14px; font-size:12px; color:#64748b; line-height:1.7; }
+    .s3-score-line { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin:11px 0; }
+    .s3-score { font-size:34px; line-height:1.1; font-weight:850; color:#1d4ed8; font-variant-numeric:tabular-nums; }
+    .s3-score small { font-size:15px; font-weight:600; color:#64748b; }
+    .s3-score-pass { color:#047857; }
+    .s3-score-state { font-size:13px; font-weight:750; }
+    .s3-feedback-focus { margin-top:12px; padding:12px 14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; }
+    .s3-submetrics { display:flex; gap:10px; flex-wrap:wrap; font-size:12px; color:#475569; margin:8px 0; }
+    .s3-submetrics span { border-radius:999px; background:#f1f5f9; padding:3px 9px; }
+    .s3-issue-list { margin:7px 0 0 20px; padding:0; display:grid; gap:7px; }
+    .s3-issue-list li { padding-left:3px; }
+    .s3-link-section { margin-top:12px; padding-top:10px; border-top:1px dashed #bfdbfe; }
+    .s3-link-list { margin:6px 0 0 18px; display:grid; gap:5px; }
+    .s3-accurate-msg { color:#065f46; font-weight:600; }
+
+    /* Victory Hall */
+    .victory-banner {
+      background: radial-gradient(circle at top right, rgba(245, 158, 11, 0.22), transparent 50%),
+                  linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      text-align: center;
+      margin-bottom: 20px;
+      border: 2px solid #f59e0b;
+    }
+
+    .trophy-icon {
+      font-size: 46px;
+      margin-bottom: 8px;
+    }
+
+    .victory-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fde68a;
+      margin-bottom: 6px;
+    }
+
+    .stats-trio {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0 6px;
+    }
+
+    .stat-tile {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+
+    .stat-tile .val {
+      font-size: 24px;
+      font-weight: 800;
+      color: #7dd3fc;
+    }
+
+    .stat-tile .key {
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+
+    .codex-list {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .codex-list li {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--emerald);
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+    }
+
+
+    /* ==================== LEVELLED CERTIFICATE ==================== */
+    .cert-panel { margin: 22px 0 26px; }
+    .cert-panel-heading { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; margin-bottom:12px; }
+    .cert-panel-heading h3 { font-size:20px; font-weight:850; color:#1e293b; }
+    .cert-panel-heading p { color:#64748b; font-size:13px; }
+    .cert-name-tools { display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin:12px 0; }
+    .cert-name-tools label {font-size:13px; color:#334155; font-weight:700;}
+    .cert-name-tools input {flex:1; min-width:180px; max-width:300px; padding:9px 12px; font-size:14px; border:1px solid #cbd5e1; border-radius:9px; outline-color:#c5a15b; }
+    .cert-sheet { --cert-accent:#bd8c34; --cert-accent-light:#f8edcc; position:relative; overflow:hidden;
+      background:linear-gradient(145deg,#fffdf7 0%,#fffdfa 55%,#f7f0df 100%);
+      border:9px solid #11223c; border-radius:14px; padding:29px 38px;
+      box-shadow:0 10px 30px rgba(15,23,42,.10); color:#1b2940; text-align:center; }
+    .cert-sheet[data-tier="A"] { --cert-accent:#5166a9; --cert-accent-light:#eef2ff; }
+    .cert-sheet[data-tier="B"] { --cert-accent:#188174; --cert-accent-light:#e8f7f3; }
+    .cert-sheet[data-tier="C"] { --cert-accent:#62728d; --cert-accent-light:#eff2f6; }
+    .cert-inner {border:2px solid var(--cert-accent); padding:24px 27px 21px; position:relative;}
+    .cert-kicker {font-size:11px; font-weight:900; letter-spacing:3px; color:#52657d; margin-bottom:9px;}
+    .cert-title {font-weight:900; font-size:30px; line-height:1.4; color:#102340; letter-spacing:3px;}
+    .cert-title-en {font-size:12px; letter-spacing:3px; color:#677890; margin:3px 0 12px;}
+    .cert-line {margin:0 auto 14px; width:110px; height:2px; background:var(--cert-accent);}
+    .cert-recipient {margin:4px 0 7px; font-size:28px; font-weight:850; color:#102340; letter-spacing:1px; overflow-wrap:anywhere;}
+    .cert-intro {font-size:14px; color:#59697b; line-height:1.85; margin:7px auto 10px;}
+    .cert-tier {display:inline-flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; color:#1b2940;
+      background:var(--cert-accent-light); border:1px solid var(--cert-accent); border-radius:999px; padding:9px 20px;
+      margin:5px 0 12px; font-size:19px; font-weight:900;}
+    .cert-tier-symbol {font-size:19px; color:var(--cert-accent); font-weight:900;}
+    .cert-score {font-size:15px; font-weight:800; color:#42536b; margin-bottom:12px;}
+    .cert-stats {display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin:14px 0 10px; text-align:left;}
+    .cert-stat {background:rgba(255,255,255,.78); border:1px solid #d7dce4; border-radius:9px; padding:10px 12px;}
+    .cert-stat-label {font-size:11px; font-weight:800; letter-spacing:.2px; color:#55677c;}
+    .cert-stat-value {font-size:16px; font-weight:900; color:#173052; margin:3px 0;}
+    .cert-stat-detail {font-size:11px; color:#66788e; line-height:1.5;}
+    .cert-footer {display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;
+      border-top:1px solid #d5c9ae; padding-top:11px; font-size:11px; color:#65748a; text-align:left;}
+    .cert-footer strong {font-weight:800; color:#334155;}
+    .cert-disclaimer {font-size:11px; color:#64748b; line-height:1.65; margin-top:11px;}
+    .cert-actions {display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:13px;}
+    .cert-rubric {font-size:12px; padding:12px 14px; margin-top:12px; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; color:#526174; line-height:1.8;}
+    @media(max-width:700px) {
+      .cert-sheet {padding:10px; border-width:5px;}
+      .cert-inner {padding:17px 11px;}
+      .cert-title {font-size:23px;}
+      .cert-recipient {font-size:22px;}
+      .cert-tier {font-size:16px; padding:8px 12px;}
+      .cert-stats {grid-template-columns:1fr; gap:6px;}
+      .cert-stat {padding:8px 10px;}
+    }
+    @page { size:A4 landscape; margin:9mm; }
+    @media print {
+      html,body {background:#fff !important; margin:0 !important; padding:0 !important;}
+      body * {visibility:hidden !important;}
+      #certificateSheet, #certificateSheet * {visibility:visible !important;}
+      #certificateSheet {position:absolute !important; top:0 !important; left:0 !important; margin:0 !important;
+        width:100% !important; max-width:none !important; border-radius:0 !important; box-shadow:none !important;
+        padding:7mm !important; font-size:95% !important; break-inside:avoid !important;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+      #certificateSheet .cert-inner {padding:9mm 10mm !important;}
+      #certificateSheet .cert-stats {grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+      #certificateSheet .cert-title {font-size:30px !important;}
+      #certificateSheet .cert-recipient {font-size:28px !important;}
+    }
+
+    /* Stage Clear Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.72);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 18px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      animation: panelFade 0.25s ease;
+    }
+
+    .modal-card {
+      background: #fff;
+      max-width: 440px;
+      width: 100%;
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      border: 2px solid var(--gold);
+    }
+
+    .modal-card h3 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 8px 0;
+    }
+
+    .modal-card p {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin-bottom: 18px;
+    }
+
+    .xp-gain-tag {
+      display: inline-block;
+      background: var(--gold-soft);
+      color: var(--gold-dark);
+      font-weight: 800;
+      font-size: 14px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 720px) {
+      .stage-map {
+        grid-template-columns: 1fr;
+      }
+      .game-title {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="game-header">
+  <div class="container">
+    <div class="hud-top">
+      <div>
+        <div class="quest-tags">
+          <span class="q-tag gold">⚔️ Sound Hunt Quest</span>
+          <span class="q-tag">CEFR B1–B2</span>
+          <span class="q-tag">TOEIC Part 4 • English Listening</span>
+        </div>
+        <h1 class="game-title">Linking Legends: The Sound Hunt</h1>
+        <p class="game-subtitle">連音傳奇：尋聲之旅 — 破解英語連音密碼，挑戰聽辨、理解與跟讀實踐的三重試煉！</p>
+      </div>
+
+      <div class="player-hud">
+        <div class="hud-row">
+          <span class="rank-label" id="hudRank">🏅 稱號：尋聲見習生</span>
+          <span class="xp-label" id="hudXp">0 / 1000 XP</span>
+        </div>
+        <div class="xp-bar-bg">
+          <div class="xp-bar-fill" id="hudXpBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-strip">
+      <div class="control-group">
+        <label>
+          <span>🌍 英語口音：</span>
+          <select id="accent-select" aria-label="選擇英語口音">
+            <option value="us">🇺🇸 American｜美式</option>
+            <option value="uk">🇬🇧 British｜英式</option>
+          </select>
+        </label>
+        <label>
+          <span>🎙️ 英語聲線：</span>
+          <select id="voice-select" aria-label="選擇英語聲線">
+            <option value="sophia">Sophia（女聲）</option>
+            <option value="daniel">Daniel（男聲）</option>
+          </select>
+        </label>
+        <button type="button" class="test-sound-btn" id="btn-test-voice">
+          🔊 試聽聲線
+        </button>
+      </div>
+
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- 3-Stage Progression Map -->
+  <nav class="stage-map" aria-label="Quest Stages">
+    <button class="stage-node unlocked active" id="node-1" onclick="trySelectStage(1)">
+      <div class="node-top">
+        <span class="stage-badge">Stage 01 • Understand</span>
+        <span class="node-status-icon" id="icon-1">⚔️</span>
+      </div>
+      <span class="node-title">迷霧情報站</span>
+      <span class="node-sub">The Whispering Briefing</span>
+    </button>
+
+    <button class="stage-node locked" id="node-2" onclick="trySelectStage(2)">
+      <div class="node-top">
+        <span class="stage-badge">Stage 02 • Identify</span>
+        <span class="node-status-icon" id="icon-2">🔒</span>
+      </div>
+      <span class="node-title">邊界狩獵場</span>
+      <span class="node-sub">The Boundary Hunter</span>
+    </button>
+
+    <button class="stage-node locked" id="node-3" onclick="trySelectStage(3)">
+      <div class="node-top">
+        <span class="stage-badge">Stage 03 • Apply</span>
+        <span class="node-status-icon" id="icon-3">🔒</span>
+      </div>
+      <span class="node-title">傳奇回聲殿</span>
+      <span class="node-sub">Echoes of the Legend</span>
+    </button>
+  </nav>
+
+  <!-- ==================== STAGE 01: THE WHISPERING BRIEFING ==================== -->
+  <section class="stage-panel active" id="stage-1">
+    <div class="quest-card">
+      <div class="quest-header">
+        <h2>Stage 01：迷霧情報站 (The Whispering Briefing)</h2>
+        <span class="reward-pill">過關獎勵：+300 XP & 解鎖 Stage 02</span>
+      </div>
+
+      <div class="lore-box">
+        <strong>🎯 關卡任務：</strong>外商部門主管正在進行 90 秒晨會廣播，但密集連音形成了一層「聽覺迷霧」。請在<strong>不看逐字稿</strong>的條件下<strong>盲聽最多兩次</strong>，並成功攔截 3 項關鍵情報（單選題）即可開啟通往第二關的傳送門！
+      </div>
+
+      <!-- Embedded Proven TOEIC Part 4 90s Audio Player -->
+      <div class="toeic-player-box">
+        <div class="tp-header">
+          <div>
+            <span class="tp-badge">TOEIC Part 4 • Short Talk 獨白</span>
+            <div class="tp-title">週一晨會公告</div>
+          </div>
+          <div class="tp-status-pill">
+            <div id="equalizer" class="eq-wrap" aria-hidden="true">
+              <span class="eq-bar"></span>
+              <span class="eq-bar"></span>
+              <span class="eq-bar"></span>
+              <span class="eq-bar"></span>
+              <span class="eq-bar"></span>
+            </div>
+            <span id="status-text">準備就緒</span>
+          </div>
+        </div>
+
+        <div class="tp-controls">
+          <div class="tp-btn-group">
+            <button id="btn-play-pause" type="button" class="btn btn-indigo">
+              <span id="btn-play-label">▶ 播放全部（限聽兩次）</span>
+            </button>
+
+            <button id="btn-stop" type="button" disabled class="btn btn-secondary">
+              ■ 停止 / 重來
+            </button>
+
+            <div class="tp-timer">
+              <span id="live-dot" class="tp-dot"></span>
+              <span id="timer-display">00:00 / 約 01:30</span>
+            </div>
+          </div>
+
+          <div class="tp-speed-group" role="group" aria-label="語速調整">
+            <button type="button" data-rate="0.85" class="speed-btn">0.85x 慢速</button>
+            <button type="button" data-rate="1.0" class="speed-btn active">1.0x 標準</button>
+            <button type="button" data-rate="1.15" class="speed-btn">1.15x 快速</button>
+          </div>
+        </div>
+
+        <div class="tp-progress-track">
+          <div id="progress-bar" class="tp-progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Blind Listening Curtain + Transcript Vault -->
+      <div class="transcript-vault">
+        <div class="blind-curtain" id="s1BlindCurtain">
+          <span class="reward-pill" style="background:rgba(245,158,11,0.2); color:#fde68a; border-color:rgba(245,158,11,0.4);">
+            🌫️ 聽覺迷霧封印中
+          </span>
+          <h4>本關已隱藏逐字稿，請專注聆聽整體主旨與細節</h4>
+          <p>完成全部三道關卡晉升「連音傳奇」後，即可解鎖完整逐字稿與連音解析！</p>
+        </div>
+        <div class="transcript-body" id="s1TranscriptBody"></div>
+      </div>
+
+      <!-- 3 Comprehension MCQs -->
+      <div id="s1Questions"></div>
+
+      <div class="footer-bar">
+        <button class="btn btn-primary" id="s1SubmitBtn" onclick="submitStage1()">
+          提交情報並驗證通關
+        </button>
+        <button class="btn btn-emerald" id="s1AdvanceBtn" onclick="trySelectStage(2)" style="display:none;">
+          前往 Stage 02：邊界狩獵場 →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== STAGE 02: THE BOUNDARY HUNTER ==================== -->
+  <section class="stage-panel" id="stage-2">
+    <div class="quest-card">
+      <div class="quest-header">
+        <h2>Stage 02：邊界狩獵場 (The Boundary Hunter)</h2>
+        <span class="reward-pill">過關獎勵：+350 XP & 解鎖 Stage 03</span>
+      </div>
+
+      <div class="lore-box">
+        <strong>🏹 狩獵規則：</strong>系統從剛才的廣播中鎖定了 <strong>4 個連音目標句</strong>。每句擁有兩次狩獵機會：<br>
+        • <strong>第 1 次射擊</strong>：若未完全命中，獵人羅盤會給出<strong>簡短線索（Clue）</strong>，不透露完整答案，請自行修正。<br>
+        • <strong>第 2 次射擊</strong>：系統將揭曉原句、標出漏聽單字，並顯現「子音接母音 (<code>‿</code>)」連音符文！集滿 4 句即可解鎖最終試煉。<br>
+        • <strong>聆聽規則</strong>：第一次作答前，正常速度與 0.85x 慢速追蹤合計最多可聽 <strong>2 次</strong>；如果首次未完全命中，獲得簡短線索後<strong>再增加 1 次重聽機會</strong>，重聽後填寫第二次答案。
+      </div>
+
+      <div class="step-bars" id="s2Bars"></div>
+
+      <div>
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+          <strong style="font-size:16px;" id="s2TargetLabel">獵物目標 1 / 4</strong>
+          <span class="reward-pill" id="s2AttemptTag">Attempt 1 / 2（首次狩獵）</span>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+          <button class="btn btn-indigo" id="s2ListenNormalBtn" onclick="playHunterTarget()">
+            🔊 聆聽目標語流
+          </button>
+          <button class="btn btn-secondary" id="s2ListenSlowBtn" onclick="playHunterTarget(0.85)">
+            🐢 慢速追蹤 (0.85x)
+          </button>
+          <span style="font-size:13px; color:var(--text-sub);" id="s2PlayCount" aria-live="polite">首次作答前聆聽：0 / 2 次</span>
+        </div>
+
+        <input
+          type="text"
+          class="hunter-input"
+          id="s2Input"
+          placeholder="請輸入你捕捉到的完整英文句子..."
+          autocomplete="off"
+          spellcheck="false"
+        />
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="s2SubmitBtn" onclick="submitHunterAttempt()">
+            發動第一次聽寫判定
+          </button>
+          <button class="btn btn-emerald" id="s2NextBtn" onclick="advanceHunterTarget()" style="display:none;">
+            鎖定下一個目標 →
+          </button>
+        </div>
+
+        <div class="feedback-card" id="s2Feedback"></div>
+      </div>
+
+      <div class="footer-bar">
+        <button class="btn btn-secondary" onclick="trySelectStage(1)">← 回顧 Stage 01</button>
+        <button class="btn btn-gold" id="s2ToS3Btn" onclick="trySelectStage(3)" style="display:none;">
+          通關！開啟 Stage 03 傳奇回聲殿 →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== STAGE 03: ECHOES OF THE LEGEND ==================== -->
+  <section class="stage-panel" id="stage-3">
+    <div class="quest-card">
+      <div class="quest-header">
+        <h2>Stage 03：傳奇回聲殿 (Echoes of the Legend)</h2>
+        <span class="reward-pill">最終獎勵：+350 XP & 晉升「連音傳奇」</span>
+      </div>
+
+      <div class="lore-box">
+        <strong>🔥 最終試煉：</strong>真正的連音傳奇不僅聽得懂，更要能自然說出口！請先聆聽示範，再錄音跟讀 5 句職場英語。每次跟讀後，系統會依<strong>語音辨識結果給出參考分數</strong>，並列出<strong>所有辨識到的待加強字詞與連音位置</strong>。<strong>每句達到 80 分，且連音關鍵詞辨識率達 80% 才能通關</strong>；未達標可反覆聆聽、重念，次數不限。
+      </div>
+
+      <div class="step-bars" id="s3Bars"></div>
+
+      <div id="s3Arena">
+        <div class="echo-arena">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <strong style="font-size:16px;" id="s3TrialLabel">回聲試煉 1 / 5</strong>
+            <span class="reward-pill" id="s3RoundTag">第 1 次跟讀</span>
+          </div>
+
+          <div class="link-scroll" id="s3SentenceBox"></div>
+          <p style="font-size:13px; color:var(--text-sub);" id="s3RuleHint"></p>
+
+          <div class="rec-row">
+            <button class="btn btn-indigo" onclick="playEchoModel()">
+              🔊 聆聽 AI 示範發音
+            </button>
+            <button class="btn btn-gold" id="s3RecBtn" onclick="toggleEchoRecording()">
+              🎙️ 開始跟讀錄音
+            </button>
+            <span class="rec-live" id="s3RecLive">
+              <span class="blink-dot"></span> 錄音中…唸完請按「停止並評分」
+            </span>
+          </div>
+
+          <p class="s3-accuracy-note">📌 評分依據是瀏覽器辨識出的字詞，能提供漏字與連音詞練習建議；<strong>無法直接測量音素、重音或連音是否自然</strong>。語音辨識偶爾也會出錯，請搭配錄音回聽。</p>
+          <div id="s3ResultArea" aria-live="polite" style="display:none; margin-top:16px; padding-top:14px; border-top:1px dashed #cbd5e1;">
+            <div id="s3PlaybackBox" style="margin-bottom:10px;"></div>
+            <div class="feedback-card reveal show" id="s3AiReview" style="margin-top:0;"></div>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;">
+              <button class="btn btn-indigo" id="s3SecondRoundBtn" onclick="triggerSecondEchoRound()">
+                🔁 重聽示範，再跟讀一次
+              </button>
+              <button class="btn btn-emerald" id="s3NextTrialBtn" onclick="advanceEchoTrial()" disabled style="display:none;">
+                達標，前往下一句 →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINAL LEGENDARY VICTORY HALL -->
+      <div id="s3VictoryHall" style="display:none;">
+        <div class="victory-banner">
+          <div class="trophy-icon">🏆</div>
+          <div class="victory-title">三重試煉完成！領取你的專屬連音證書</div>
+          <p style="font-size:14px; color:#e2e8f0;">你已完成聽力理解、連音聽寫及跟讀挑戰。系統將依每關實際表現頒發不同級別的證書！</p>
+
+          <div class="stats-trio">
+            <div class="stat-tile">
+              <div class="val" id="finalS1">- / 3</div>
+              <div class="key">Stage 1 情報攔截</div>
+            </div>
+            <div class="stat-tile">
+              <div class="val" id="finalS2">4 / 4</div>
+              <div class="key">Stage 2 完全答對題數</div>
+            </div>
+            <div class="stat-tile">
+              <div class="val" id="finalS3">5 / 5</div>
+              <div class="key">Stage 3 回聲試煉</div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Dynamic certificate; only created after all three stages are completed. -->
+        <section class="cert-panel" id="certificateArea" aria-labelledby="certificateHeading">
+          <div class="cert-panel-heading">
+            <div>
+              <h3 id="certificateHeading">📜 你的尋聲冒險證書</h3>
+              <p>由三關真實作答結果自動評定等級，可輸入姓名並列印或保存。</p>
+            </div>
+          </div>
+          <div class="cert-name-tools">
+            <label for="certificateNameInput">證書上的姓名</label>
+            <input id="certificateNameInput" maxlength="32" type="text" placeholder="請輸入姓名（選填）" autocomplete="name" oninput="updateCertificateName()" />
+          </div>
+          <article class="cert-sheet" id="certificateSheet" data-tier="C" aria-label="連音傳奇遊戲結業證書">
+            <div class="cert-inner">
+              <div class="cert-kicker">LINKING LEGENDS · THE SOUND HUNT</div>
+              <div class="cert-title">連音傳奇 · 尋聲證書</div>
+              <div class="cert-title-en">CERTIFICATE OF ACHIEVEMENT</div>
+              <div class="cert-line"></div>
+              <div class="cert-recipient" id="certRecipient">尋聲冒險者</div>
+              <p class="cert-intro">恭喜完成三重英語連音挑戰，根據聽力、聽寫與跟讀練習成果，榮獲</p>
+              <div class="cert-tier"><span class="cert-tier-symbol" id="certTierLetter">C</span><span id="certTierName">尋聲勇者</span></div>
+              <div class="cert-score" id="certTotalScore">綜合評定：-- / 100 分</div>
+              <div class="cert-stats">
+                <div class="cert-stat">
+                  <div class="cert-stat-label">STAGE 01 · 聽力理解</div>
+                  <div class="cert-stat-value" id="certS1Value">-- / 3 題</div>
+                  <div class="cert-stat-detail" id="certS1Detail">掌握公告主旨與細節</div>
+                </div>
+                <div class="cert-stat">
+                  <div class="cert-stat-label">STAGE 02 · 邊界狩獵</div>
+                  <div class="cert-stat-value" id="certS2Value">-- / 4 題</div>
+                  <div class="cert-stat-detail" id="certS2Detail">完成聽寫並比對連音</div>
+                </div>
+                <div class="cert-stat">
+                  <div class="cert-stat-label">STAGE 03 · 跟讀實踐</div>
+                  <div class="cert-stat-value" id="certS3Value">-- / 5 句</div>
+                  <div class="cert-stat-detail" id="certS3Detail">通關分數為語音辨識參考值</div>
+                </div>
+              </div>
+              <div class="cert-footer">
+                <div><strong>Linking Legends: The Sound Hunt</strong><div>英語連音闖關 · 學習成就紀錄</div></div>
+                <div>完成日期：<strong id="certDate">—</strong></div>
+              </div>
+            </div>
+          </article>
+          <div class="cert-actions">
+            <button type="button" class="btn btn-gold" onclick="downloadCertificatePng()">⬇ 下載證書圖片（PNG）</button>
+            <button type="button" class="btn btn-secondary" onclick="window.print()">🖨 列印／另存為 PDF</button>
+          </div>
+          <div class="cert-rubric" id="certificateRubric">級別說明：S 級 90–100、A 級 80–89、B 級 65–79、C 級 0–64。綜合分數：Stage 01（30 分）、Stage 02（35 分）、Stage 03（35 分）。Stage 02 首次全對高於提示後修正，Stage 03 以達標時最佳語音辨識分數及首輪達標句數評估。</div>
+          <p class="cert-disclaimer">本證書為遊戲學習成果，不是 TOEIC 官方證書，也不代表經專業發音測評；Stage 03 使用瀏覽器語音轉文字的練習參考分數。</p>
+        </section>
+
+        <div style="background:var(--bg-soft); border:1px solid var(--border); border-radius:var(--radius-md); padding:20px; margin-bottom:18px;">
+          <h3 style="font-size:16px; margin-bottom:6px;">📜 連音傳奇三大奧義總結</h3>
+          <ul class="codex-list">
+            <li><strong>奧義一｜片語動詞無縫滑入：</strong>如 <code>signed‿up</code>、<code>pick‿up</code>、<code>wrap‿up</code>、<code>fill‿out</code>。前字字尾子音直接借給後字開頭母音當聲母，聽起來像單一雙音節詞。</li>
+            <li><strong>奧義二｜弱化虛詞串聯鎖鏈：</strong>如 <code>at least‿an‿hour‿in‿advance</code>、<code>send‿an‿email</code>、<code>because‿of</code>。冠詞與介系詞在自然語速中會弱化並黏附前字，是破解長句的關鍵。</li>
+            <li><strong>延伸知識｜美式英語常見的彈舌音 (Flap T)：</strong>如 <code>start‿our</code>、<code>right‿after</code>、<code>update‿about</code>。美式英語部分語境中，<code>t</code> 會變成近似 <code>d</code> 的輕彈音；英式英語通常保留較清楚的 <code>t</code> 發音。</li>
+          </ul>
+        </div>
+
+        <!-- Unlocked Ancient Scroll: Full Transcript -->
+        <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:var(--radius-md); padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+            <strong style="font-size:16px; color:#92400e;">🔓 傳奇寶箱解鎖：Stage 01 完整廣播逐字稿（點擊任一句可重聽）</strong>
+            <button class="btn btn-gold" onclick="playFromSentence(0, true)">🔊 從頭重聽完整廣播</button>
+          </div>
+          <div id="unlockedTranscriptContainer"></div>
+        </div>
+      </div>
+
+      <div class="footer-bar">
+        <button class="btn btn-secondary" onclick="trySelectStage(2)">← 回顧 Stage 02</button>
+        <button class="btn btn-secondary" onclick="restartWholeQuest()">↺ 重新開啟尋聲之旅</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Stage Clear Celebration Modal -->
+<div class="modal-backdrop" id="clearModal">
+  <div class="modal-card">
+    <div style="font-size:44px;" id="modalIcon">🎉</div>
+    <h3 id="modalTitle">STAGE CLEARED!</h3>
+    <div class="xp-gain-tag" id="modalXp">+300 XP 獲得！</div>
+    <p id="modalDesc">關卡試煉完成，下一關的封印已經解除！</p>
+    <button class="btn btn-gold" style="width:100%;" id="modalActionBtn" onclick="closeClearModalAndAdvance()">
+      前往下一關 →
+    </button>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="game-toast" id="gameToast">提示訊息</div>
+
+<script>
+  /**
+   * 90秒 TOEIC Part 4 職場廣播講稿資料 (直接沿用可正常播放的 3 段 10 句架構)
+   */
+  const monologueParagraphs = [
+    {
+      paragraphIndex: 1,
+      topic: '第一段：開場與三樓會議室整修公告',
+      sentences: [
+        {
+          id: 0,
+          text: "Good morning, everyone, and thanks for coming in a few minutes early today.",
+          linkedHtml: `Good morning, everyone, and thanks for <span class="arc">coming‿in</span> a few <span class="arc">minutes‿early</span> today.`
+        },
+        {
+          id: 1,
+          text: "Before we start our regular Monday meeting, I want to give you a quick update about the renovations on the third floor.",
+          linkedHtml: `Before we <span class="arc">start‿our</span> regular Monday meeting, I want to give you a <span class="arc">quick‿update‿about</span> the <span class="arc">renovations‿on</span> the third floor.`
+        },
+        {
+          id: 2,
+          text: "Starting this Wednesday, the construction crew will begin upgrading the main conference rooms and replacing the carpets in the hallway.",
+          linkedHtml: `Starting this Wednesday, the construction crew will <span class="arc">begin‿upgrading</span> the main conference rooms and replacing the <span class="arc">carpets‿in</span> the hallway.`
+        },
+        {
+          id: 3,
+          text: "Because of the noise, all client meetings scheduled for the rest of the week will be moved to the training center on the ground floor.",
+          linkedHtml: `<span class="arc">Because‿of</span> the noise, all client meetings scheduled for the <span class="arc">rest‿of</span> the week will be moved to the training center on the ground floor.`
+        }
+      ]
+    },
+    {
+      paragraphIndex: 2,
+      topic: '第二段：前檯數位訪客登記系統新制',
+      sentences: [
+        {
+          id: 4,
+          text: "In addition, our new digital check-in system at the front desk goes live tomorrow morning.",
+          linkedHtml: `<span class="arc">In‿addition</span>, our new digital check-in <span class="arc">system‿at</span> the front desk goes live tomorrow morning.`
+        },
+        {
+          id: 5,
+          text: "Whenever you invite an outside guest to the office, please make sure you register their name on the company portal at least an hour in advance.",
+          linkedHtml: `Whenever you <span class="arc">invite‿an‿outside</span> guest to the office, please make sure you register their name on the company portal at <span class="arc">least‿an‿hour‿in‿advance</span>.`
+        },
+        {
+          id: 6,
+          text: "That way, the receptionist can print out their visitor badge ahead of time and avoid long lines in the lobby.",
+          linkedHtml: `That way, the receptionist can <span class="arc">print‿out</span> their visitor badge <span class="arc">ahead‿of</span> time <span class="arc">and‿avoid</span> long <span class="arc">lines‿in</span> the lobby.`
+        }
+      ]
+    },
+    {
+      paragraphIndex: 3,
+      topic: '第三段：週五銷售工作坊報名提醒與結語',
+      sentences: [
+        {
+          id: 7,
+          text: "Finally, I’d like to remind everyone that our quarterly sales workshop takes place this Friday afternoon.",
+          linkedHtml: `Finally, I’d like to <span class="arc">remind‿everyone</span> that our quarterly sales workshop takes place this Friday afternoon.`
+        },
+        {
+          id: 8,
+          text: "If you haven’t signed up for a breakout session yet, please send an email to Sarah in Human Resources by five o'clock today so she can finalize the headcount.",
+          linkedHtml: `If you haven’t <span class="arc">signed‿up</span> for a breakout session yet, please <span class="arc">send‿an‿email</span> to Sarah in Human Resources by <span class="arc">five‿o'clock</span> today so she can finalize the headcount.`
+        },
+        {
+          id: 9,
+          text: "Thanks again for your cooperation, and let’s have a productive week.",
+          linkedHtml: `<span class="arc">Thanks‿again</span> for your cooperation, and let’s have a productive week.`
+        }
+      ]
+    }
+  ];
+
+  const allSentences = monologueParagraphs.flatMap(p =>
+    p.sentences.map(s => ({
+      ...s,
+      paragraphIndex: p.paragraphIndex
+    }))
+  );
+
+  const stage1Questions = [
+    {
+      q: "1. What is the main purpose of the talk?",
+      options: [
+        "(A) To introduce a new receptionist to the team",
+        "(B) To announce several upcoming workplace updates",
+        "(C) To review the results of a quarterly sales workshop",
+        "(D) To complain about noise from the construction crew"
+      ],
+      answer: 1,
+      exp: "<strong>正解：(B)</strong> 主管在晨會開頭說明要同步辦公室最新近況，依序公告「三樓整修與會議室改期」、「訪客數位登記系統上線」以及「週五銷售工作坊報名」三項資訊。"
+    },
+    {
+      q: "2. Why will client meetings be relocated starting Wednesday?",
+      options: [
+        "(A) The ground floor training center is larger.",
+        "(B) The digital check-in system is not working.",
+        "(C) Construction work will be taking place on the third floor.",
+        "(D) Human Resources needs the third-floor rooms for a workshop."
+      ],
+      answer: 2,
+      exp: "<strong>正解：(C)</strong> 週三起施工團隊將翻修三樓主會議室與走廊地毯，因施工噪音（Because of the noise），本週剩餘客戶會議全數改至一樓訓練中心。"
+    },
+    {
+      q: "3. What are listeners asked to do before five o'clock today?",
+      options: [
+        "(A) Print out their own visitor badges",
+        "(B) Register an outside guest on the company portal",
+        "(C) Move their equipment out of the conference rooms",
+        "(D) Email Sarah to register for a breakout session"
+      ],
+      answer: 3,
+      exp: "<strong>正解：(D)</strong> 尚未報名週五下午分組討論（breakout session）的同仁，需在今天五點前寄信給人資部的 Sarah 以確認最終出席人數。"
+    }
+  ];
+
+  const stage2Targets = [
+    {
+      raw: "Before we start our regular Monday meeting, I want to give you a quick update about the renovations on the third floor.",
+      marked: 'Before we <span class="arc">start‿our</span> regular Monday meeting, I want to give you a <span class="arc">quick‿update‿about</span> the <span class="arc">renovations‿on</span> the third floor.',
+      linkedWords: ["start", "our", "quick", "update", "about", "renovations", "on"],
+      detail: "<strong>連音拆解：</strong><br>• <code>start‿our</code>：字尾 /t/ 與母音 <code>our</code> 連讀。<br>• <code>quick‿update‿about</code>：/k/ 接 /ʌ/，接著 /t/ 接 /ə/，三詞緊密相連。<br>• <code>renovations‿on</code>：複數字尾 /z/ 直接滑入介系詞 <code>on</code>。"
+    },
+    {
+      raw: "Because of the noise, all client meetings scheduled for the rest of the week will be moved to the training center.",
+      marked: '<span class="arc">Because‿of</span> the noise, all client meetings scheduled for the <span class="arc">rest‿of</span> the week will be moved to the training center.',
+      linkedWords: ["because", "of", "rest", "of", "scheduled"],
+      detail: "<strong>連音拆解：</strong><br>• <code>Because‿of</code>：字尾 /z/ 連讀弱化的 <code>of</code> (/bɪˈkɔːz əv/)。<br>• <code>rest‿of</code>：字尾 /t/ 連讀 <code>of</code> (/rɛst əv/)。"
+    },
+    {
+      raw: "Please make sure you register their name on the company portal at least an hour in advance.",
+      marked: 'Please make sure you register their <span class="arc">name‿on</span> the company portal <span class="arc">at least‿an‿hour‿in‿advance</span>.',
+      linkedWords: ["name", "on", "at", "least", "an", "hour", "in", "advance"],
+      detail: "<strong>連音拆解：</strong><br>• <code>name‿on</code>：/m/ 連讀 <code>on</code>。<br>• <code>at least‿an‿hour‿in‿advance</code>：<code>least</code> 的 /t/ 連 <code>an</code>，/n/ 連不發音 h 的 <code>hour</code>，/r/ 連 <code>in</code>，/n/ 再連 <code>advance</code>。"
+    },
+    {
+      raw: "If you haven't signed up for a breakout session yet, please send an email to Sarah by five o'clock today.",
+      marked: `If you haven’t <span class="arc">signed‿up</span> for a breakout session yet, please <span class="arc">send‿an‿email</span> to Sarah by <span class="arc">five‿o'clock</span> today.`,
+      linkedWords: ["signed", "up", "send", "an", "email", "five", "o'clock"],
+      detail: "<strong>連音拆解：</strong><br>• <code>signed‿up</code>：字尾 /d/ 連讀 <code>up</code> (/saɪnd ʌp/)。<br>• <code>send‿an‿email</code>：/d/ 連讀弱化的 <code>an</code>，/n/ 再連讀 <code>email</code>。<br>• <code>five‿o'clock</code>：/v/ 與 <code>o'clock</code> 開頭母音連讀。"
+    }
+  ];
+
+  const stage3Trials = [
+    {
+      raw: "Could you pick up the printed handouts on your way back upstairs?",
+      marked: 'Could you <span class="arc">pick‿up</span> the printed <span class="arc">handouts‿on</span> your way <span class="arc">back‿upstairs</span>?',
+      hint: "符文規則：片語動詞 pick‿up (/k/+/ʌ/)、複數字尾 handouts‿on (/s/+/ɑː/)、子音接母音 back‿upstairs (/k/+/ʌ/)。",
+      targets: ["pick", "up", "handouts", "on", "back", "upstairs"]
+    },
+    {
+      raw: "We need to wrap up the budget review at least an hour before the client arrives.",
+      marked: 'We need to <span class="arc">wrap‿up</span> the budget review <span class="arc">at least‿an‿hour</span> before the <span class="arc">client‿arrives</span>.',
+      hint: "符文規則：經典連續連音 at least‿an‿hour，加上片語 wrap‿up 與 client‿arrives。",
+      targets: ["wrap", "up", "least", "an", "hour", "client", "arrives"]
+    },
+    {
+      raw: "Please fill out the registration form and send an email to our support team.",
+      marked: 'Please <span class="arc">fill‿out</span> the registration <span class="arc">form‿and</span> <span class="arc">send‿an‿email</span> to our support team.',
+      hint: "符文規則：片語 fill‿out (/l/+/aʊ/) 與 send‿an‿email 三字連讀。",
+      targets: ["fill", "out", "send", "an", "email"]
+    },
+    {
+      raw: "Because of the heavy rain, the outdoor reception will be moved inside the main lobby.",
+      marked: '<span class="arc">Because‿of</span> the heavy rain, the outdoor reception will be <span class="arc">moved‿inside</span> the main lobby.',
+      hint: "符文規則：Because‿of (/z/+/ə/) 弱化連讀，以及過去分詞 moved‿inside (/d/+/ɪ/)。",
+      targets: ["because", "of", "moved", "inside"]
+    },
+    {
+      raw: "Let's check in with the marketing team right after we finish our morning briefing.",
+      marked: 'Let’s <span class="arc">check‿in</span> with the marketing team <span class="arc">right‿after</span> we <span class="arc">finish‿our</span> morning briefing.',
+      hint: "符文規則：check‿in (/k/+/ɪ/)、美式常見彈舌音 right‿after（英式通常保留 /t/） (/d/+/æ/)、字尾 /ʃ/ 連讀 finish‿our。",
+      targets: ["check", "in", "right", "after", "finish", "our"]
+    }
+  ];
+
+  // Browser speech synthesis, with iOS-safe voice fallback and direct-gesture queueing.
+  // Audio quality depends on the OS-installed voices; no fixed voice tracks are embedded.
+  const previewSentence = "Welcome to the Sound Hunt. Let's listen for connected speech and follow the rhythm.";
+
+  // ==================== UNIFIED AUDIO & QUEST STATE ====================
+  const state = {
+    accent: 'us',
+    voice: 'sophia',
+    currentSentenceIndex: -1,
+    isPlaying: false,
+    isPaused: false,
+    playbackRate: 1.0,
+    elapsedSeconds: 0,
+    timerInterval: null,
+    sessionId: 0,
+    s1ListenCount: 0
+  };
+
+  const S1_MAX_LISTENS = 2;
+
+  let unlockedStage = 1;
+  let clearedStages = { 1: false, 2: false, 3: false };
+  let currentStage = 1;
+  let xp = 0;
+  let pendingNextStage = null;
+  let s1Score = 0;
+
+  let s2Idx = 0;
+  let s2Attempt = 1;
+  let s2Listens = 0;
+  let s2HintReplayListens = 0;
+  let s2AudioPending = false;
+  const S2_MAX_LISTENS = 2;
+  const S2_HINT_REPLAY_LISTENS = 1;
+  let s2ClearedCount = 0;
+  let s2Results = []; // first: directly correct; second: corrected; incomplete: not fully correct after two attempts
+
+  let s3Idx = 0;
+  let s3Round = 1;
+  let s3Passed = false;
+  let s3BestScore = 0;
+  let s3FirstPassAttempts = null;
+  let s3HighestPassingScore = 0;
+  let s3TrialResults = []; // one record for each unlocked/passable sentence
+  let isRecording = false;
+  let s3IsAnalyzing = false;
+  let s3RecordFinished = false;
+  let s3RecognitionFinished = false;
+  let s3Session = 0;
+  let s3EvaluationTimer = null;
+  let s3AudioUrl = null;
+  let s3RecognitionError = '';
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recognition = null;
+  let spokenText = "";
+  let s3AudioBlob = null;
+
+  const S3_PASS_SCORE = 80;
+  const S3_PASS_LINK_COVERAGE = 80;
+
+  // DOM References for Embedded Player
+  const btnPlayPause = document.getElementById('btn-play-pause');
+  const btnPlayLabel = document.getElementById('btn-play-label');
+  const btnStop = document.getElementById('btn-stop');
+  const timerDisplay = document.getElementById('timer-display');
+  const liveDot = document.getElementById('live-dot');
+  const progressBar = document.getElementById('progress-bar');
+  const equalizer = document.getElementById('equalizer');
+  const statusText = document.getElementById('status-text');
+  const voiceSelect = document.getElementById('voice-select');
+  const accentSelect = document.getElementById('accent-select');
+  const synthesis = ('speechSynthesis' in window) ? window.speechSynthesis : null;
+  const localeMap = { us: 'en-US', uk: 'en-GB' };
+  let systemVoices = [];
+  let chosenVoice = null;
+  let activeUtterance = null;
+  let voiceSession = 0;
+
+  const preferredNames = {
+    us: {
+      sophia: ['sophia', 'ava', 'aria', 'jenny', 'emma', 'michelle', 'samantha', 'zira', 'allison'],
+      daniel: ['daniel', 'andrew', 'guy', 'brian', 'eric', 'davis', 'david', 'roger', 'alex']
+    },
+    uk: {
+      sophia: ['sophia', 'sonia', 'libby', 'maisie', 'kate', 'serena', 'hazel', 'amy', 'susan'],
+      daniel: ['daniel', 'ryan', 'thomas', 'oliver', 'daniel', 'george', 'arthur', 'peter']
+    }
+  };
+
+  function availableForAccent(v, accent) {
+    const lang = String(v.lang || '').toLowerCase().replace('_', '-');
+    const name = String(v.name || '').toLowerCase();
+    const country = accent === 'uk' ? 'united kingdom' : 'united states';
+    return lang.startsWith(localeMap[accent].toLowerCase()) ||
+      (name.includes('english') && name.includes(country));
+  }
+  function isNaturalVoice(v) {
+    return /online\s*\(natural\)|\bnatural\b|\bneural\b|\bpremium\b/i.test(String(v.name));
+  }
+  function voiceGenderCategory(v, accent) {
+    const name = String(v.name || '').toLowerCase();
+    const femaleNames = [...preferredNames.us.sophia, ...preferredNames.uk.sophia];
+    const maleNames = [...preferredNames.us.daniel, ...preferredNames.uk.daniel];
+    if (femaleNames.some(n => new RegExp('\\b' + n + '\\b', 'i').test(name))) return 'sophia';
+    if (maleNames.some(n => new RegExp('\\b' + n + '\\b', 'i').test(name))) return 'daniel';
+    // Some OS voices describe their gender directly rather than using a known name.
+    if (/\bfemale\b|\bwoman\b/i.test(name)) return 'sophia';
+    if (/\bmale\b|\bman\b/i.test(name)) return 'daniel';
+    return 'unknown';
+  }
+  function voiceScore(v, accent, persona) {
+    const n = String(v.name || '').toLowerCase();
+    const rank = preferredNames[accent][persona].findIndex(preferred =>
+      new RegExp('\\b' + preferred + '\\b', 'i').test(n));
+    const known = voiceGenderCategory(v, accent);
+    let score = isNaturalVoice(v) ? 110 : 0;
+    if (/online/i.test(n)) score += 5;
+    if (known === persona) score += 60;
+    if (known !== 'unknown' && known !== persona) score -= 500;
+    if (rank !== -1) score += 35 - rank;
+    return score;
+  }
+
+  function resolveSystemVoice() {
+    if (!synthesis) return null;
+    const accentVoices = systemVoices.filter(v => availableForAccent(v, state.accent));
+    const sorted = accentVoices.slice().sort((a, b) =>
+      voiceScore(b, state.accent, state.voice) - voiceScore(a, state.accent, state.voice));
+    return sorted[0] || null;
+  }
+
+  function updateVoiceSelectionUI() {
+    accentSelect.value = state.accent;
+    voiceSelect.value = state.voice;
+    chosenVoice = resolveSystemVoice();
+  }
+
+  function refreshVoices() {
+    if (!synthesis) {
+      systemVoices = [];
+      updateVoiceSelectionUI();
+      return;
+    }
+    const voices = synthesis.getVoices();
+    if (voices.length) systemVoices = voices;
+    updateVoiceSelectionUI();
+  }
+
+  // On iOS, cancel() may resolve asynchronously; do not cancel an idle engine
+  // immediately before speak(), or the *new* utterance can be canceled instead.
+  function haltSpeechEngines() {
+    voiceSession++;
+    const shouldCancel = !!(synthesis && activeUtterance &&
+      (synthesis.speaking || synthesis.pending || synthesis.paused));
+    activeUtterance = null;
+    if (shouldCancel) {
+      try { synthesis.cancel(); } catch (_) {}
+    }
+  }
+
+  function speakNative(text, options = {}) {
+    if (!synthesis || !('SpeechSynthesisUtterance' in window)) {
+      showToast('⚠️ 這個瀏覽器無法播放網頁語音，請使用 Safari／Chrome，並以一般網頁開啟。');
+      if (options.onFailure) options.onFailure('unsupported');
+      return false;
+    }
+    // iOS getVoices() can stay empty until after a user tap. Do not refuse to
+    // speak: when no matching voice is listed, let the OS use u.lang.
+    if (!chosenVoice) refreshVoices();
+    const u = new SpeechSynthesisUtterance(text);
+    if (chosenVoice) u.voice = chosenVoice;
+    u.lang = localeMap[state.accent];
+    u.rate = options.rate ?? state.playbackRate;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+    const ticket = voiceSession;
+    activeUtterance = u;
+    let finished = false;
+    let actuallyStarted = false;
+    let startWatch = null;
+    const clearWatch = () => { if (startWatch) clearTimeout(startWatch); startWatch = null; };
+    const failed = reason => {
+      if (ticket !== voiceSession || finished) return;
+      finished = true;
+      clearWatch();
+      if (options.onFailure) options.onFailure(reason);
+      // This message is deliberately only shown on failure, not permanently in the UI.
+      showToast('⚠️ 手機未能啟動語音。請從 Safari 開啟正式網頁，再按一次試聽。');
+    };
+    u.onstart = () => {
+      if (ticket !== voiceSession || finished) return;
+      actuallyStarted = true;
+      clearWatch();
+      if (options.onStart) options.onStart();
+    };
+    u.onboundary = e => {
+      if (ticket === voiceSession && !finished && options.onBoundary)
+        options.onBoundary(e.charIndex || 0);
+    };
+    u.onend = () => {
+      if (ticket !== voiceSession || finished) return;
+      if (!actuallyStarted) { failed('no-start-event'); return; }
+      finished = true;
+      clearWatch();
+      if (activeUtterance === u) activeUtterance = null;
+      if (options.onEnd) options.onEnd();
+    };
+    u.onerror = e => {
+      if (ticket !== voiceSession || finished) return;
+      const reason = e.error || 'unknown';
+      if (reason === 'canceled' || reason === 'interrupted') {
+        // If the browser itself interrupted us (not a user stop), recover UI.
+        if (options.onFailure) options.onFailure(reason);
+        finished = true;
+        clearWatch();
+        return;
+      }
+      failed(reason);
+    };
+    try {
+      // This must be invoked synchronously from a tap/click, especially on iOS.
+      synthesis.speak(u);
+      if (options.startupCheck !== false) {
+        startWatch = setTimeout(() => {
+          if (ticket !== voiceSession || finished || actuallyStarted) return;
+          if (!synthesis.speaking) failed('start-timeout');
+        }, 7000);
+      }
+      return true;
+    } catch (error) {
+      failed('exception');
+      return false;
+    }
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('gameToast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  function formatSeconds(sec) {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function updateTimerDisplay() {
+    const estimatedTotal = Math.round(90 / state.playbackRate);
+    timerDisplay.textContent = `${formatSeconds(state.elapsedSeconds)} / 約${formatSeconds(estimatedTotal)}`;
+  }
+
+  function startTimer() {
+    stopTimer();
+    state.timerInterval = setInterval(() => {
+      if (state.isPlaying && !state.isPaused) {
+        state.elapsedSeconds += 1;
+        updateTimerDisplay();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+  }
+
+  // Stage 2 and Stage 3 use the same chosen browser voice and accent.
+  function speakOneLineDirect(text, customRate = null, kind = null, index = null, callbacks = {}) {
+    stopPlayback();
+    return speakNative(text, { rate: customRate ?? state.playbackRate, ...callbacks });
+  }
+
+  function updatePlaybackUI() {
+
+    if (state.isPlaying && !state.isPaused) {
+      btnPlayLabel.textContent = '⏸ 暫停播放';
+      btnPlayPause.disabled = false;
+      btnStop.disabled = false;
+      equalizer.classList.add('eq-active');
+      statusText.textContent = `播報中 (${state.currentSentenceIndex + 1}/${allSentences.length} 句)`;
+      statusText.style.color = '#4338ca';
+      liveDot.classList.add('live');
+    } else if (state.isPaused) {
+      btnPlayLabel.textContent = '▶ 繼續播放';
+      btnPlayPause.disabled = false;
+      btnStop.disabled = false;
+      equalizer.classList.remove('eq-active');
+      statusText.textContent = '已暫停';
+      statusText.style.color = '#b45309';
+      liveDot.classList.remove('live');
+    } else {
+      if (!clearedStages[3] && state.s1ListenCount >= S1_MAX_LISTENS) {
+        btnPlayLabel.textContent = '✓ 本關已聆聽 2 / 2 次';
+        btnPlayPause.disabled = true;
+      } else if (clearedStages[3]) {
+        btnPlayLabel.textContent = '▶ 播放全部（可重複聆聽）';
+        btnPlayPause.disabled = false;
+      } else if (state.s1ListenCount === 1) {
+        btnPlayLabel.textContent = '▶ 再聽一次（剩餘 1 次）';
+        btnPlayPause.disabled = false;
+      } else {
+        btnPlayLabel.textContent = '▶ 播放全部（限聽兩次）';
+        btnPlayPause.disabled = false;
+      }
+      btnStop.disabled = state.currentSentenceIndex === -1 && state.elapsedSeconds === 0;
+      equalizer.classList.remove('eq-active');
+      statusText.textContent = '準備就緒';
+      statusText.style.color = '#475569';
+      liveDot.classList.remove('live');
+    }
+
+    const pct = state.currentSentenceIndex >= 0
+      ? Math.round(((state.currentSentenceIndex + 1) / allSentences.length) * 100)
+      : 0;
+    progressBar.style.width = `${pct}%`;
+  }
+
+  function renderTranscriptLists() {
+    const html = monologueParagraphs.map(para => `
+      <div class="para-block">
+        <div class="para-head">
+          <span>PARAGRAPH 0${para.paragraphIndex}</span>
+          <span>${para.topic}</span>
+        </div>
+        ${para.sentences.map(s => `
+          <div class="sentence-row ${state.currentSentenceIndex === s.id ? 'playing' : ''}" onclick="playFromSentence(${s.id}, true)">
+            <span style="font-family:monospace; color:#64748b; margin-right:6px;">${String(s.id + 1).padStart(2, '0')}</span>
+            ${s.linkedHtml}
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+    const s1Body = document.getElementById('s1TranscriptBody');
+    const s3Body = document.getElementById('unlockedTranscriptContainer');
+    if (s1Body) s1Body.innerHTML = html;
+    if (s3Body) s3Body.innerHTML = html;
+  }
+
+  /**
+   * Stage 1: enqueue ALL paragraphs synchronously on the user's tap.
+   * iOS Safari may reject paragraph 2/3 if speak() is first called from onend,
+   * which is no longer a direct user gesture.
+   */
+  function playFromSentence(index, bypassOneTimeLock = false) {
+    if (bypassOneTimeLock && !clearedStages[3]) {
+      showToast('🔒 完成全部三關後才能使用逐句重聽。');
+      return;
+    }
+    if (!clearedStages[3] && state.s1ListenCount >= S1_MAX_LISTENS) {
+      showToast('🔒 Stage 01 最多聆聽 2 次，完成全部三關後可自由重聽。');
+      return;
+    }
+    refreshVoices(); // Never block merely because the OS voice list is delayed.
+    haltSpeechEngines();
+    const session = voiceSession;
+    const paragraphs = monologueParagraphs.map(p => ({
+      ...p,
+      sentences: p.sentences.filter(s => s.id >= index)
+    })).filter(p => p.sentences.length);
+    if (!paragraphs.length) return;
+    if (index === 0 && !state.isPlaying) {
+      state.elapsedSeconds = 0;
+      updateTimerDisplay();
+    }
+    state.currentSentenceIndex = index;
+    state.isPlaying = true;
+    state.isPaused = false;
+    renderTranscriptLists();
+    updatePlaybackUI();
+    let countedFirstStart = false;
+    const abortOnFailure = () => {
+      if (session !== voiceSession) return;
+      haltSpeechEngines();
+      state.isPlaying = false;
+      state.isPaused = false;
+      state.currentSentenceIndex = -1;
+      stopTimer();
+      renderTranscriptLists();
+      updatePlaybackUI();
+    };
+    function finishFullPlayback() {
+      if (voiceSession !== session) return;
+      state.isPlaying = false;
+      state.isPaused = false;
+      state.currentSentenceIndex = -1;
+      stopTimer();
+      renderTranscriptLists();
+      updatePlaybackUI();
+      progressBar.style.width = '100%';
+      statusText.textContent = '播報完畢';
+      showToast('TOEIC Part 4 職場廣播已播放完畢！');
+    }
+    // All speak() calls happen in the original click, not in the onend event.
+    paragraphs.forEach((para, p) => {
+      const sent = para.sentences;
+      const message = sent.map(s => s.text).join(' ');
+      const offsets = [];
+      let cursor = 0;
+      sent.forEach(sentence => {
+        offsets.push({ id: sentence.id, offset: cursor });
+        cursor += sentence.text.length + 1;
+      });
+      speakNative(message, {
+        rate: state.playbackRate,
+        startupCheck: p === 0,
+        onStart: () => {
+          if (session !== voiceSession) return;
+          if (!countedFirstStart) {
+            countedFirstStart = true;
+            // A silent/blocked speech attempt must NOT consume a listen.
+            if (!clearedStages[3]) state.s1ListenCount++;
+            startTimer();
+          }
+          state.currentSentenceIndex = sent[0].id;
+          renderTranscriptLists();
+          updatePlaybackUI();
+        },
+        onBoundary: charIndex => {
+          if (session !== voiceSession) return;
+          const active = offsets.filter(o => o.offset <= charIndex).pop();
+          if (active && active.id !== state.currentSentenceIndex) {
+            state.currentSentenceIndex = active.id;
+            renderTranscriptLists();
+            updatePlaybackUI();
+          }
+        },
+        onEnd: () => {
+          if (session !== voiceSession) return;
+          if (p === paragraphs.length - 1) finishFullPlayback();
+        },
+        onFailure: abortOnFailure
+      });
+    });
+  }
+
+  function stopPlayback() {
+    haltSpeechEngines();
+    state.isPlaying = false;
+    state.isPaused = false;
+    state.currentSentenceIndex = -1;
+    state.elapsedSeconds = 0;
+    stopTimer();
+    updateTimerDisplay();
+    renderTranscriptLists();
+    updatePlaybackUI();
+  }
+
+  // ==================== HUD & STAGE PROGRESSION ====================
+  function addXp(amount) {
+    xp = Math.min(1000, xp + amount);
+    document.getElementById('hudXp').textContent = `${xp} / 1000 XP`;
+    document.getElementById('hudXpBar').style.width = `${Math.max(5, (xp / 1000) * 100)}%`;
+
+    const rankEl = document.getElementById('hudRank');
+    if (xp >= 1000) rankEl.textContent = '🏆 稱號：Linking Legend 連音傳奇';
+    else if (xp >= 650) rankEl.textContent = '🔥 稱號：回聲挑戰者';
+    else if (xp >= 300) rankEl.textContent = '🏹 稱號：邊界狩獵者';
+    else rankEl.textContent = '🏅 稱號：尋聲見習生';
+  }
+
+  function updateStageMapUI() {
+    for (let i = 1; i <= 3; i++) {
+      const node = document.getElementById(`node-${i}`);
+      const icon = document.getElementById(`icon-${i}`);
+      const isAvailable = (i === 1) || (i === 2 && clearedStages[1]) || (i === 3 && clearedStages[1] && clearedStages[2]);
+      node.disabled = !isAvailable;
+      node.setAttribute('aria-disabled', String(!isAvailable));
+      node.title = isAvailable ? `Stage 0${i}` : (i === 2 ? '完成 Stage 01 才能開啟' : '完成 Stage 02 才能開啟');
+
+      node.classList.remove('locked', 'unlocked', 'active', 'cleared');
+      if (clearedStages[i]) {
+        node.classList.add('unlocked', 'cleared');
+        icon.textContent = '★';
+      } else if (isAvailable) {
+        node.classList.add('unlocked');
+        icon.textContent = '⚔️';
+      } else {
+        node.classList.add('locked');
+        icon.textContent = '🔒';
+      }
+
+      if (i === currentStage) {
+        node.classList.add('active');
+      }
+    }
+  }
+
+  function updateTranscriptVisibility() {
+    const curtain = document.getElementById('s1BlindCurtain');
+    const body = document.getElementById('s1TranscriptBody');
+    if (clearedStages[3]) {
+      curtain.style.display = 'none';
+      body.classList.add('revealed');
+    } else {
+      curtain.style.display = 'block';
+      body.classList.remove('revealed');
+    }
+  }
+
+  function canEnterStage(stageNum) {
+    return stageNum === 1 || (stageNum === 2 && clearedStages[1]) ||
+      (stageNum === 3 && clearedStages[1] && clearedStages[2]);
+  }
+
+  function trySelectStage(stageNum) {
+    if (!canEnterStage(stageNum)) {
+      const prerequisite = stageNum === 2 ? 'Stage 01' : 'Stage 02';
+      showToast(`🔒 請先完成 ${prerequisite} 全部題目才能進入下一關。`);
+      return;
+    }
+
+    stopPlayback();
+    if (currentStage === 2 && stageNum !== 2) {
+      s2AudioPending = false;
+      updateHunterListeningUI();
+    }
+    if (currentStage === 3 && stageNum !== 3 && (isRecording || s3IsAnalyzing)) cleanupEchoRecording();
+    currentStage = stageNum;
+    document.querySelectorAll('.stage-panel').forEach((p, idx) => {
+      p.classList.toggle('active', idx + 1 === stageNum);
+    });
+    updateStageMapUI();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function openClearModal(title, xpText, desc, btnLabel, nextStage) {
+    pendingNextStage = nextStage;
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalXp').textContent = xpText;
+    document.getElementById('modalDesc').textContent = desc;
+    document.getElementById('modalActionBtn').textContent = btnLabel;
+    document.getElementById('clearModal').classList.add('open');
+  }
+
+  function closeClearModalAndAdvance() {
+    document.getElementById('clearModal').classList.remove('open');
+    if (pendingNextStage) {
+      trySelectStage(pendingNextStage);
+    }
+  }
+
+  // ==================== STAGE 01 MCQs ====================
+  function renderStage1Questions() {
+    const box = document.getElementById('s1Questions');
+    box.innerHTML = stage1Questions.map((item, qIdx) => `
+      <div class="q-box">
+        <div class="q-title">${item.q}</div>
+        <div class="opt-grid">
+          ${item.options.map((opt, oIdx) => `
+            <label class="opt-item" id="s1-opt-${qIdx}-${oIdx}">
+              <input type="radio" name="s1q${qIdx}" value="${oIdx}" />
+              <span>${opt}</span>
+            </label>
+          `).join('')}
+        </div>
+        <div class="exp-drawer" id="s1-exp-${qIdx}">${item.exp}</div>
+      </div>
+    `).join('');
+  }
+
+  function submitStage1() {
+    let answered = 0;
+    let score = 0;
+
+    stage1Questions.forEach((_, qIdx) => {
+      if (document.querySelector(`input[name="s1q${qIdx}"]:checked`)) answered++;
+    });
+
+    if (answered < stage1Questions.length) {
+      showToast('⚠️ 請先回答全部 3 題情報驗證題再提交！');
+      return;
+    }
+
+    stage1Questions.forEach((item, qIdx) => {
+      const chosen = parseInt(document.querySelector(`input[name="s1q${qIdx}"]:checked`).value, 10);
+      if (chosen === item.answer) score++;
+
+      item.options.forEach((_, oIdx) => {
+        const lbl = document.getElementById(`s1-opt-${qIdx}-${oIdx}`);
+        lbl.querySelector('input').disabled = true;
+        if (oIdx === item.answer) lbl.classList.add('correct');
+        else if (oIdx === chosen && chosen !== item.answer) lbl.classList.add('wrong');
+      });
+
+      document.getElementById(`s1-exp-${qIdx}`).classList.add('show');
+    });
+
+    s1Score = score;
+    const firstClear = !clearedStages[1];
+    clearedStages[1] = true;
+    unlockedStage = Math.max(unlockedStage, 2);
+
+    if (firstClear) addXp(300);
+    updateStageMapUI();
+
+    document.getElementById('s1SubmitBtn').disabled = true;
+    document.getElementById('s1SubmitBtn').textContent = `情報驗證完成（命中 ${score} / 3 題）`;
+    document.getElementById('s1AdvanceBtn').style.display = 'inline-flex';
+
+    if (firstClear) {
+      openClearModal(
+        'STAGE 01 CLEARED!',
+        '+300 XP • 晉升「邊界狩獵者」',
+        `你成功在盲聽狀態下攔截了 ${score} / 3 項情報！第二關「邊界狩獵場 (The Boundary Hunter)」的封印已正式開啟。`,
+        '開啟傳送門：前往 Stage 02 →',
+        2
+      );
+    }
+  }
+
+  // ==================== STAGE 02 LOGIC ====================
+  function renderStage2Step() {
+    const bars = document.getElementById('s2Bars');
+    bars.innerHTML = stage2Targets.map((_, i) => {
+      let cls = 's-bar';
+      if (i < s2Idx) cls += ' done';
+      else if (i === s2Idx) cls += ' now';
+      return `<div class="${cls}"></div>`;
+    }).join('');
+
+    s2Attempt = 1;
+    s2Listens = 0;
+    s2HintReplayListens = 0;
+    s2AudioPending = false;
+    document.getElementById('s2TargetLabel').textContent = `獵物目標 ${s2Idx + 1} / ${stage2Targets.length}`;
+    document.getElementById('s2AttemptTag').textContent = 'Attempt 1 / 2（首次狩獵）';
+    document.getElementById('s2AttemptTag').style.background = 'var(--gold-soft)';
+    document.getElementById('s2AttemptTag').style.color = 'var(--gold-dark)';
+    const inp = document.getElementById('s2Input');
+    inp.value = '';
+    inp.disabled = false;
+    inp.readOnly = false;
+
+    const subBtn = document.getElementById('s2SubmitBtn');
+    subBtn.style.display = 'inline-flex';
+    subBtn.disabled = false;
+    subBtn.textContent = '發動第一次聽寫判定';
+    document.getElementById('s2NextBtn').style.display = 'none';
+
+    const fb = document.getElementById('s2Feedback');
+    fb.className = 'feedback-card';
+    fb.innerHTML = '';
+    updateHunterListeningUI();
+  }
+
+  function updateHunterListeningUI() {
+    const finished = document.getElementById('s2Input').disabled;
+    const beforeFirstAnswer = s2Attempt === 1;
+    const used = beforeFirstAnswer ? s2Listens : s2HintReplayListens;
+    const limit = beforeFirstAnswer ? S2_MAX_LISTENS : S2_HINT_REPLAY_LISTENS;
+    const remaining = Math.max(0, limit - used);
+    const label = beforeFirstAnswer ? '首次作答前聆聽' : '提示後額外重聽';
+    document.getElementById('s2PlayCount').textContent = `${label}：${used} / ${limit} 次` + (remaining === 0 ? '（本階段次數已用完）' : '');
+    document.getElementById('s2ListenNormalBtn').disabled = remaining === 0 || finished || s2AudioPending;
+    document.getElementById('s2ListenSlowBtn').disabled = remaining === 0 || finished || s2AudioPending;
+  }
+
+  function playHunterTarget(customRate = null) {
+    if (!canEnterStage(2) || currentStage !== 2) return;
+    if (document.getElementById('s2Input').disabled || s2AudioPending) return;
+    const beforeFirstAnswer = s2Attempt === 1;
+    const used = beforeFirstAnswer ? s2Listens : s2HintReplayListens;
+    const limit = beforeFirstAnswer ? S2_MAX_LISTENS : S2_HINT_REPLAY_LISTENS;
+    if (used >= limit) {
+      showToast(beforeFirstAnswer
+        ? '🔒 第一次作答前最多聽 2 次，請先作答。'
+        : '🔒 提示後額外重聽的 1 次機會已用完，請提交第二次答案。');
+      return;
+    }
+    s2AudioPending = true;
+    updateHunterListeningUI();
+    const targetIndex = s2Idx;
+    const onFailure = () => {
+      if (targetIndex !== s2Idx) return;
+      s2AudioPending = false;
+      updateHunterListeningUI();
+    };
+    const started = speakOneLineDirect(stage2Targets[s2Idx].raw, customRate, 'hunter', s2Idx, {
+      onStart: () => {
+        if (targetIndex !== s2Idx) return;
+        // Count ONLY audible utterances that reached the speech start event.
+        if (beforeFirstAnswer) s2Listens++;
+        else {
+          s2HintReplayListens++;
+          document.getElementById('s2Input').readOnly = false;
+          document.getElementById('s2SubmitBtn').disabled = false;
+        }
+        updateHunterListeningUI();
+      },
+      onEnd: () => {
+        if (targetIndex !== s2Idx) return;
+        s2AudioPending = false;
+        updateHunterListeningUI();
+      },
+      onFailure
+    });
+    if (!started) onFailure();
+  }
+
+  function tokenize(str) {
+    return str
+      .toLowerCase()
+      .replace(/[’']/g, "'")
+      .replace(/[^a-z0-9'\s]/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  // Compare the student's ACTUAL first answer with this sentence, in order.
+  // Edit-distance alignment avoids confusing an omitted word with many errors.
+  function compareHunterAnswer(targetTokens, userTokens) {
+    const a = targetTokens, b = userTokens;
+    const n = a.length, m = b.length;
+    const dp = Array.from({length:n+1}, () => Array(m+1).fill(0));
+    for(let i=n; i>=0; i--) dp[i][m] = n-i;
+    for(let j=m; j>=0; j--) dp[n][j] = m-j;
+    for(let i=n-1; i>=0; i--) {
+      for(let j=m-1; j>=0; j--) {
+        dp[i][j] = a[i] === b[j] ? dp[i+1][j+1] :
+          1+Math.min(dp[i+1][j+1], dp[i+1][j], dp[i][j+1]);
+      }
+    }
+    let i=0, j=0, prefix=0, firstIssue=null;
+    const hits=Array(n).fill(false);
+    while(i<n || j<m) {
+      if(i<n && j<m && a[i]===b[j] && dp[i][j]===dp[i+1][j+1]) {
+        hits[i]=true;
+        if(firstIssue===null) prefix++;
+        i++; j++;
+        continue;
+      }
+      let type;
+      // Prefer omission/insertion when the next word already matches;
+      // otherwise treat a one-for-one difference as a substitution.
+      if(i<n && j<m && i+1<n && a[i+1]===b[j] && dp[i][j]===dp[i+1][j]+1) {
+        type='missing';
+      } else if(i<n && j<m && j+1<m && a[i]===b[j+1] && dp[i][j]===dp[i][j+1]+1) {
+        type='extra';
+      } else if(i<n && j<m && dp[i][j]===dp[i+1][j+1]+1) {
+        type='different';
+      } else if(i<n && dp[i][j]===dp[i+1][j]+1) {
+        type='missing';
+      } else {
+        type='extra';
+      }
+      if(firstIssue===null) firstIssue={type,targetIndex:i,userIndex:j};
+      if(type==='missing') i++;
+      else if(type==='extra') j++;
+      else {i++;j++;}
+    }
+    return {hits, prefix, firstIssue, errors:dp[0][0]};
+  }
+
+  // One personalized clue only: reflect how far the learner has gotten and
+  // point to ONE word or ONE location. Never reveal the complete sentence.
+  function buildAdaptiveHunterHint(item, targetTokens, userTokens, comparison) {
+    const issue = comparison.firstIssue;
+    if(!issue) return '這次的單字順序已經吻合，請準備迎接下一個目標。';
+    const {type, targetIndex, userIndex}=issue;
+    const prefix = comparison.prefix;
+    const progress = prefix > 0 ? `你目前的答案前 <strong>${prefix} 個單字</strong>已與原句吻合。` :
+      '目前開頭的字詞還需要再確認。';
+    const location = targetIndex>=targetTokens.length ? '句尾' : `第 ${targetIndex+1} 個單字`;
+    if(type==='extra') {
+      const extra=s3Escape(userTokens[userIndex] || '');
+      return `${progress}請檢查<strong>${location}附近</strong>是否多寫了「${extra}」，重聽確認該處的聲音。`;
+    }
+    const word=targetTokens[targetIndex] || '';
+    const linked=new Set(item.linkedWords.map(w => tokenize(w)[0]));
+    const advice=linked.has(word) ? '注意它是否與前後的單字連在一起。' : '再聽清楚該位置的字詞。';
+    if(type==='missing') {
+      return `${progress}請留意<strong>${location}附近的「${s3Escape(word)}」</strong>，${advice}`;
+    }
+    return `${progress}請重新核對<strong>${location}的「${s3Escape(word)}」</strong>，${advice}`;
+  }
+
+  // Find true ‿ boundaries from the target sentence's markup. Do not show
+  // complete linked phrases before the second attempt: give ONE location only.
+  function buildNearbyLinkBoundaryHint(item, targetTokens, comparison) {
+    const holder = document.createElement('div');
+    holder.innerHTML = item.marked;
+    const boundaries = [];
+    for (const span of holder.querySelectorAll('.arc')) {
+      const spanTokens = tokenize(span.textContent);
+      let begin = -1;
+      for (let pos = 0; pos <= targetTokens.length - spanTokens.length; pos++) {
+        if (spanTokens.every((w, k) => targetTokens[pos + k] === w)) { begin = pos; break; }
+      }
+      if (begin < 0) continue;
+      let used = 0;
+      const segments = span.textContent.split('‿');
+      for (let i = 0; i < segments.length - 1; i++) {
+        used += tokenize(segments[i]).length;
+        const left = begin + used - 1;
+        if (left >= 0 && left + 1 < targetTokens.length) boundaries.push(left);
+      }
+    }
+    if (!boundaries.length) return '';
+    const focus = comparison.firstIssue?.targetIndex ?? 0;
+    const nearest = boundaries.reduce((best, pos) => Math.abs(pos - focus) < Math.abs(best - focus) ? pos : best, boundaries[0]);
+    return `🔗 <strong>連音線索：</strong>注意第 <strong>${nearest+1}</strong> 與第 <strong>${nearest+2}</strong> 個單字之間，可能有子音接母音的連接。`;
+  }
+
+  function submitHunterAttempt() {
+    if (!canEnterStage(2) || currentStage !== 2) return;
+    if (s2Attempt === 1 && s2Listens === 0) {
+      showToast('🔊 請先聆聽目標語流，再進行第一次作答。');
+      return;
+    }
+    if (s2Attempt === 2 && s2HintReplayListens === 0) {
+      showToast('🔊 請先使用提示後的 1 次重聽機會，再提交第二次答案。');
+      return;
+    }
+    const val = document.getElementById('s2Input').value.trim();
+    if (!val) {
+      showToast('⚠️ 請先輸入你聽到的英文句子！');
+      return;
+    }
+
+    const item = stage2Targets[s2Idx];
+    const targetTokens = tokenize(item.raw);
+    const userTokens = tokenize(val);
+
+    const comparison = compareHunterAnswer(targetTokens, userTokens);
+    const hits = comparison.hits;
+    const perfect = comparison.errors === 0;
+    const fb = document.getElementById('s2Feedback');
+
+    if (s2Attempt === 1 && !perfect) {
+      // 首次不完全命中：只透露一個單字位置，並解鎖額外一次重聽。
+      fb.className = 'feedback-card clue show';
+      fb.innerHTML = `<strong>💡 獵人羅盤提示（依你的作答進度）：</strong><br>${buildAdaptiveHunterHint(item, targetTokens, userTokens, comparison)}<br>${buildNearbyLinkBoundaryHint(item, targetTokens, comparison)}<br><span style="font-size:12px;">🔊 現在可再聽 1 次（正常或 0.85x），重聽後才能修改並提交第二次答案。</span>`;
+
+      s2Attempt = 2;
+      s2HintReplayListens = 0;
+      document.getElementById('s2AttemptTag').textContent = 'Attempt 2 / 2（重聽後再修正）';
+      document.getElementById('s2SubmitBtn').textContent = '發動第二次最終判定';
+      document.getElementById('s2SubmitBtn').disabled = true;
+      document.getElementById('s2Input').readOnly = true;
+      updateHunterListeningUI();
+      return;
+    }
+
+    const displayWords = item.raw.split(/\s+/);
+    const chipsHtml = displayWords.map((w, i) =>
+      `<span class="chip ${hits[i] ? 'hit' : 'miss'}">${w}</span>`
+    ).join('');
+
+    fb.className = 'feedback-card reveal show';
+    fb.innerHTML = `
+      ${perfect ? '🎯 <strong>完美命中！所有單字邊界無一遺漏！</strong>' : '📋 <strong>獵物現形（標紅波浪底線為漏聽或拼錯的單字）：</strong>'}
+      <div class="word-chips">${chipsHtml}</div>
+      <div style="margin-top:12px; font-size:13px; color:var(--text-sub);">🔗 <strong>連音符文 (<code>‿</code>) 與發音解析：</strong></div>
+      <div class="link-scroll">${item.marked}</div>
+      <div style="font-size:13px; line-height:1.7;">${item.detail}</div>
+    `;
+
+    s2Results[s2Idx] = {
+      status: perfect ? (s2Attempt === 1 ? 'first' : 'second') : 'incomplete',
+      firstListenCount: s2Listens,
+      hintReplayCount: s2HintReplayListens
+    };
+    document.getElementById('s2Input').disabled = true;
+    updateHunterListeningUI();
+    document.getElementById('s2SubmitBtn').style.display = 'none';
+    s2ClearedCount = Math.max(s2ClearedCount, s2Idx + 1);
+
+    if (s2Idx < stage2Targets.length - 1) {
+      document.getElementById('s2NextBtn').style.display = 'inline-flex';
+    } else {
+      document.getElementById('s2Bars').innerHTML = stage2Targets.map(() => `<div class="s-bar done"></div>`).join('');
+      const firstClear = !clearedStages[2];
+      clearedStages[2] = true;
+      unlockedStage = Math.max(unlockedStage, 3);
+      if (firstClear) addXp(350);
+      updateStageMapUI();
+      document.getElementById('s2ToS3Btn').style.display = 'inline-flex';
+
+      if (firstClear) {
+        openClearModal(
+          'STAGE 02 CLEARED!',
+          '+350 XP • 晉升「回聲挑戰者」',
+          '4 個連音目標全數破譯完成！最終試煉「傳奇回聲殿 (Echoes of the Legend)」的大門已經為你敞開。',
+          '開啟傳送門：前往 Stage 03 →',
+          3
+        );
+      }
+    }
+  }
+
+  function advanceHunterTarget() {
+    if (!canEnterStage(2) || currentStage !== 2 || !document.getElementById('s2Input').disabled) return;
+    if (s2Idx < stage2Targets.length - 1) {
+      s2Idx++;
+      renderStage2Step();
+    }
+  }
+
+  // ==================== STAGE 03 LOGIC ====================
+  // Browser SpeechRecognition provides text recognition, not phoneme-level
+  // pronunciation assessment. All scores are explicitly labeled estimates.
+  function s3Escape(text) {
+    return String(text).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+
+  function echoWords(text) {
+    return (String(text).toLowerCase().replace(/’/g, "'").match(/[a-z0-9]+(?:'[a-z0-9]+)*/g) || [])
+      .map(w => w.replace(/'/g, ''));
+  }
+
+  function echoAlignment(reference, heard) {
+    // Align every recognized token with the reference to report ALL observable
+    // discrepancies. Text recognition cannot determine true phoneme errors.
+    const a = echoWords(reference), b = echoWords(heard);
+    const dp = Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));
+    for (let i=0;i<=a.length;i++) dp[i][0]=i;
+    for (let j=0;j<=b.length;j++) dp[0][j]=j;
+    for (let i=1;i<=a.length;i++) for (let j=1;j<=b.length;j++) {
+      dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+    }
+    let i=a.length,j=b.length;
+    const correct=new Set(), issues=[];
+    while(i>0 || j>0) {
+      if(i>0 && j>0 && dp[i][j]===dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1)) {
+        if(a[i-1]===b[j-1]) correct.add(i-1);
+        else issues.push({type:'substitution',at:i-1,expected:a[i-1],detected:b[j-1]});
+        i--;j--;
+      } else if(i>0 && dp[i][j]===dp[i-1][j]+1) {
+        issues.push({type:'omission',at:i-1,expected:a[i-1]});
+        i--;
+      } else {
+        issues.push({type:'addition',at:i,detected:b[j-1]});
+        j--;
+      }
+    }
+    issues.reverse();
+    return {reference:a, heard:b, correct, issues, errors:dp[a.length][b.length]};
+  }
+
+  function echoLinkedPhrases(item) {
+    const div=document.createElement('div');
+    div.innerHTML=item.marked;
+    return Array.from(div.querySelectorAll('.arc')).map(el=>el.textContent.trim());
+  }
+
+  function echoPhraseLocations(item, words) {
+    let nextStart=0;
+    return echoLinkedPhrases(item).map(phrase=>{
+      const tokens=echoWords(phrase);
+      let start=-1;
+      for(let pos=nextStart;pos<=words.length-tokens.length;pos++) {
+        if(tokens.every((w,k)=>words[pos+k]===w)) {start=pos;break;}
+      }
+      if(start>=0) nextStart=start+tokens.length;
+      return {phrase,start,end:start+tokens.length-1};
+    }).filter(x=>x.start>=0);
+  }
+
+  function echoAllIssuesMarkup(item, alignment) {
+    const issues=alignment.issues;
+    if(!issues.length) {
+      return '<div class="s3-accurate-msg">✅ 本次所有單字都已被系統辨識，沒有偵測到漏字、多字或詞語不一致。</div>'+
+        '<div style="margin-top:6px">你仍可回聽自己的錄音，對照畫面中的連音標示，練習語調與流暢度；這些無法由文字辨識直接評分。</div>';
+    }
+    const lines=issues.map(issue=>{
+      if(issue.type==='omission') return `<li>第 ${issue.at+1} 個字 <strong>${s3Escape(issue.expected)}</strong>：系統未辨識到。請比對示範並確認這個字有清楚帶到。</li>`;
+      if(issue.type==='substitution') return `<li>第 ${issue.at+1} 個字：目標是 <strong>${s3Escape(issue.expected)}</strong>，系統辨識成 <strong>${s3Escape(issue.detected)}</strong>。請回聽並確認該字是否清楚。</li>`;
+      const where=issue.at===0?'句首附近':`第 ${issue.at} 個字之後`;
+      return `<li>${where}：系統額外辨識出 <strong>${s3Escape(issue.detected)}</strong>。請檢查是否多唸，或是否為語音辨識誤差。</li>`;
+    });
+    const linked=echoPhraseLocations(item,alignment.reference).filter(p=>issues.some(e=>e.at>=p.start && e.at<=p.end+1));
+    const linkHtml=linked.length?`<div class="s3-link-section"><strong>🔗 同時需要核對的連音片語（${linked.length} 組）</strong><ul class="s3-link-list">${linked.map(p=>`<li><strong>${s3Escape(p.phrase)}</strong>：重聽字尾子音接到下一字母音的銜接，再連成一個自然語流。</li>`).join('')}</ul></div>`:'';
+    return `<div><strong>📝 字詞辨識差異（共 ${issues.length} 處）</strong><ol class="s3-issue-list">${lines.join('')}</ol>${linkHtml}<p style="font-size:12px;color:#64748b;margin-top:10px">以上列出本次所有文字辨識差異，不代表每處一定是實際發音錯誤；請回聽確認後再練習。</p></div>`;
+  }
+
+  function echoScore(item, speech) {
+    const al=echoAlignment(item.raw,speech);
+    const refs=al.reference;
+    const important=new Set(item.targets.map(w=>echoWords(w)[0]));
+    const importantIdx=refs.map((w,i)=>important.has(w)?i:-1).filter(i=>i!==-1);
+    const matchedImportant=importantIdx.filter(i=>al.correct.has(i)).length;
+    const coverage=refs.length?Math.max(0,100*(1-al.errors/Math.max(refs.length,al.heard.length))):0;
+    const linkedCoverage=importantIdx.length?100*matchedImportant/importantIdx.length:0;
+    const score=Math.round(.75*coverage+.25*linkedCoverage);
+    const passed=score>=S3_PASS_SCORE && linkedCoverage>=S3_PASS_LINK_COVERAGE;
+    return {
+      score,coverage:Math.round(coverage),linkedCoverage:Math.round(linkedCoverage),passed,
+      issueCount:al.issues.length,focus:echoAllIssuesMarkup(item,al)
+    };
+  }
+
+  function cleanupEchoRecording() {
+    s3Session++;
+    clearTimeout(s3EvaluationTimer);
+    s3EvaluationTimer=null;
+    if(recognition) { try {recognition.abort();} catch(e){} recognition=null; }
+    if(mediaRecorder && mediaRecorder.state!=='inactive') {
+      try {mediaRecorder.stop();} catch(e){}
+    }
+    mediaRecorder=null;
+    isRecording=false;
+    s3IsAnalyzing=false;
+    const btn=document.getElementById('s3RecBtn');
+    btn.disabled=false;
+    btn.textContent='🎙️ 開始跟讀錄音';
+    btn.className='btn btn-gold';
+    document.getElementById('s3RecLive').classList.remove('on');
+  }
+
+  function renderStage3Step() {
+    cleanupEchoRecording();
+    if(s3AudioUrl) { URL.revokeObjectURL(s3AudioUrl); s3AudioUrl=null; }
+    const bars=document.getElementById('s3Bars');
+    bars.innerHTML=stage3Trials.map((_,i)=>{
+      let cls='s-bar';
+      if(i<s3Idx) cls+=' done';
+      else if(i===s3Idx) cls+=' now';
+      return `<div class="${cls}"></div>`;
+    }).join('');
+
+    s3Round=0;
+    s3Passed=false;
+    s3BestScore=0;
+    s3FirstPassAttempts=null;
+    s3HighestPassingScore=0;
+    spokenText='';
+    s3AudioBlob=null;
+    const item=stage3Trials[s3Idx];
+    document.getElementById('s3TrialLabel').textContent=`回聲試煉 ${s3Idx+1} / ${stage3Trials.length}`;
+    document.getElementById('s3RoundTag').textContent='準備第 1 次跟讀';
+    document.getElementById('s3SentenceBox').innerHTML=item.marked;
+    document.getElementById('s3RuleHint').textContent=item.hint;
+    document.getElementById('s3ResultArea').style.display='none';
+    document.getElementById('s3PlaybackBox').innerHTML='';
+    document.getElementById('s3SecondRoundBtn').textContent='🔁 重聽示範，再跟讀一次';
+    document.getElementById('s3NextTrialBtn').disabled=true;
+    document.getElementById('s3NextTrialBtn').style.display='none';
+  }
+
+  function playEchoModel() {
+    if (!canEnterStage(3) || currentStage !== 3) return;
+    if(isRecording || s3IsAnalyzing) { showToast('請先停止錄音或等待辨識完成。'); return; }
+    speakOneLineDirect(stage3Trials[s3Idx].raw,null,'echo',s3Idx);
+  }
+
+  async function toggleEchoRecording() {
+    if (!canEnterStage(3) || currentStage !== 3) return;
+    if(isRecording) { finishEchoRecording(); return; }
+    if(s3IsAnalyzing) return;
+    const SpeechRec=window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SpeechRec) {
+      showToast('⚠️ 目前瀏覽器不支援自動語音辨識，請改用支援的 Chrome／Edge 瀏覽器。');
+      document.getElementById('s3ResultArea').style.display='block';
+      document.getElementById('s3AiReview').innerHTML='<strong>無法自動評分</strong>：此瀏覽器沒有語音辨識功能，請改用支援語音辨識的 Chrome／Edge。';
+      document.getElementById('s3SecondRoundBtn').style.display='none';
+      document.getElementById('s3NextTrialBtn').style.display='none';
+      return;
+    }
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      showToast('⚠️ 無法使用麥克風錄音，請確認權限並使用 HTTPS 網頁。');
+      return;
+    }
+
+    stopPlayback();
+    const ticket=++s3Session;
+    spokenText='';
+    audioChunks=[];
+    s3RecognitionError='';
+    s3RecordFinished=false;
+    s3RecognitionFinished=false;
+    s3IsAnalyzing=true; // Prevent a second concurrent microphone request.
+    let stream=null;
+    try {
+      stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      if(ticket!==s3Session) { stream.getTracks().forEach(t=>t.stop()); return; }
+      mediaRecorder=new MediaRecorder(stream);
+      mediaRecorder.ondataavailable=e=>{ if(ticket===s3Session && e.data.size>0) audioChunks.push(e.data); };
+      mediaRecorder.onstop=()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        if(ticket!==s3Session) return;
+        if(s3AudioUrl) URL.revokeObjectURL(s3AudioUrl);
+        const blob=new Blob(audioChunks,{type:mediaRecorder.mimeType||'audio/webm'});
+        s3AudioBlob=blob;
+        s3AudioUrl=blob.size?URL.createObjectURL(blob):null;
+        const playback=document.getElementById('s3PlaybackBox');
+        playback.innerHTML=s3AudioUrl?`<div style="font-size:13px;font-weight:700;margin-bottom:6px">🎧 回聽你的跟讀錄音</div><audio controls src="${s3AudioUrl}" style="width:100%;height:36px"></audio>`:'';
+        s3RecordFinished=true;
+        finalizeEchoEvaluation(ticket);
+      };
+
+      if (SpeechRec) {
+        recognition=new SpeechRec();
+        recognition.lang=state.accent==='uk'?'en-GB':'en-US';
+        recognition.interimResults=false;
+        recognition.continuous=true;
+        recognition.maxAlternatives=1;
+        const chunks=[];
+        recognition.onresult=e=>{
+          if(ticket!==s3Session) return;
+          for(let i=e.resultIndex;i<e.results.length;i++) {
+            if(e.results[i].isFinal) chunks[i]=e.results[i][0].transcript;
+          }
+          spokenText=chunks.filter(Boolean).join(' ').trim();
+        };
+        recognition.onerror=e=>{
+          if(ticket!==s3Session) return;
+          s3RecognitionError=e.error||'unknown';
+          if(!isRecording) {s3RecognitionFinished=true;finalizeEchoEvaluation(ticket);}
+        };
+        recognition.onend=()=>{
+          if(ticket!==s3Session) return;
+          s3RecognitionFinished=true;
+          finalizeEchoEvaluation(ticket);
+        };
+        recognition.start();
+      }
+      mediaRecorder.start();
+      s3Round++;
+      s3IsAnalyzing=false;
+      isRecording=true;
+      document.getElementById('s3RoundTag').textContent=`第 ${s3Round} 次跟讀`;
+      document.getElementById('s3ResultArea').style.display='none';
+      document.getElementById('s3RecBtn').textContent='⏹ 停止錄音並評分';
+      document.getElementById('s3RecBtn').className='btn btn-crimson';
+      document.getElementById('s3RecLive').classList.add('on');
+    } catch(err) {
+      if(stream) stream.getTracks().forEach(t=>t.stop());
+      if(ticket!==s3Session) return;
+      s3IsAnalyzing=false;
+      isRecording=false;
+      if(mediaRecorder && mediaRecorder.state!=='inactive') {try {mediaRecorder.stop();} catch(e){}}
+      if(recognition) {try{recognition.abort();}catch(e){}}
+      document.getElementById('s3RecBtn').disabled=false;
+      const errorName=err && err.name || '';
+      showToast(errorName==='NotAllowedError'?'⚠️ 請允許麥克風使用權限，才能進行跟讀評分。':'⚠️ 無法啟動錄音或語音辨識；請使用最新版 Chrome／Edge。');
+    }
+  }
+
+  function finishEchoRecording() {
+    if(!isRecording) return;
+    isRecording=false;
+    s3IsAnalyzing=true;
+    const btn=document.getElementById('s3RecBtn');
+    btn.textContent='⏳ 正在辨識並評分…';
+    btn.disabled=true;
+    btn.className='btn btn-secondary';
+    document.getElementById('s3RecLive').classList.remove('on');
+    if(recognition && !s3RecognitionFinished) {try {recognition.stop();}catch(e){s3RecognitionFinished=true;}}
+    if(mediaRecorder && mediaRecorder.state!=='inactive') {try {mediaRecorder.stop();}catch(e){s3RecordFinished=true;}}
+    clearTimeout(s3EvaluationTimer);
+    const ticket=s3Session;
+    s3EvaluationTimer=setTimeout(()=>{ if(ticket!==s3Session) return; s3RecognitionFinished=true;finalizeEchoEvaluation(ticket); },2800);
+    finalizeEchoEvaluation(ticket);
+  }
+
+  function finalizeEchoEvaluation(ticket) {
+    if(ticket!==s3Session || !s3IsAnalyzing || !s3RecordFinished || !s3RecognitionFinished) return;
+    clearTimeout(s3EvaluationTimer);
+    s3EvaluationTimer=null;
+    s3IsAnalyzing=false;
+    const btn=document.getElementById('s3RecBtn');
+    btn.disabled=false;
+    btn.textContent='🎙️ 再錄一次';
+    btn.className='btn btn-gold';
+    evaluateEchoAttempt();
+  }
+
+  function evaluateEchoAttempt() {
+    const item=stage3Trials[s3Idx];
+    const area=document.getElementById('s3ResultArea');
+    const review=document.getElementById('s3AiReview');
+    const again=document.getElementById('s3SecondRoundBtn');
+    const next=document.getElementById('s3NextTrialBtn');
+    area.style.display='block';
+    again.style.display='inline-flex';
+    next.style.display='none';
+    next.disabled=true;
+
+    if(!spokenText.trim()) {
+      review.innerHTML=`<strong>🎙️ 第 ${s3Round} 次跟讀：尚無可評分的辨識結果</strong><p style="margin-top:8px">${s3RecognitionError?`語音辨識未成功（${s3Escape(s3RecognitionError)}）。`:'系統沒有辨識出完整語句。'}請回聽錄音、確認麥克風權限與收音，再聽示範重新錄音。<strong>這次不計 0 分，也不會直接通關。</strong></p>`;
+      again.textContent='🔁 重聽示範，再錄一次';
+      return;
+    }
+
+    const result=echoScore(item,spokenText);
+    s3BestScore=Math.max(s3BestScore,result.score);
+    s3Passed=result.passed;
+    if (result.passed) {
+      s3HighestPassingScore=Math.max(s3HighestPassingScore,result.score);
+      if (s3FirstPassAttempts === null) s3FirstPassAttempts=s3Round;
+    }
+    review.innerHTML=`
+      <strong>🤖 跟讀辨識回饋 · 第 ${s3Round} 次</strong>
+      <div class="s3-score-line">
+        <div class="s3-score ${result.passed?'s3-score-pass':''}">${result.score}<small> / 100</small></div>
+        <div class="s3-score-state">${result.passed?'✅ 達到本句通關標準！':'🎯 尚未達標，跟著提示再練一次'}<br><span style="color:#64748b;font-size:12px;font-weight:500">歷次最高分：${s3BestScore} 分</span></div>
+      </div>
+      <div class="s3-submetrics"><span>整句辨識吻合度：${result.coverage}%</span><span>連音關鍵詞辨識率：${result.linkedCoverage}%</span><span>通關標準：80 分＋關鍵詞 80%</span></div>
+      <div style="font-size:13px"><strong>本次系統辨識：</strong>「${s3Escape(spokenText)}」</div>
+      <div class="s3-feedback-focus"><strong>💡 本次所有可改善的位置（根據字詞辨識）</strong><div style="margin-top:5px">${result.focus}</div></div>
+      <div style="font-size:12px;color:#64748b;margin-top:10px">此為語音轉文字比對的練習分數，不能單憑此分數判定實際連音、語調或口音是否正確。</div>
+    `;
+    if(result.passed) {
+      again.textContent='🔁 想更流暢？再挑戰一次（選擇性）';
+      next.style.display='inline-flex';
+      next.disabled=false;
+      next.textContent=s3Idx<stage3Trials.length-1?'✅ 達標！前往下一句 →':'🏆 五句達標！完成連音傳奇';
+    } else {
+      again.textContent='🔁 重聽示範，再跟讀一次（不限次數）';
+    }
+  }
+
+  function triggerSecondEchoRound() {
+    if(isRecording||s3IsAnalyzing) return;
+    document.getElementById('s3ResultArea').style.display='none';
+    document.getElementById('s3RoundTag').textContent=`準備第 ${s3Round+1} 次跟讀`;
+    playEchoModel();
+  }
+
+  function advanceEchoTrial() {
+    if (!canEnterStage(3) || currentStage !== 3) return;
+    if(!s3Passed || isRecording || s3IsAnalyzing) {
+      showToast('🔒 請先達到跟讀辨識標準（80 分且關鍵詞 80%）再前進。');
+      return;
+    }
+    stopPlayback();
+    s3TrialResults[s3Idx] = {
+      score: s3HighestPassingScore,
+      firstPassAttempt: s3FirstPassAttempts,
+      attempts: s3Round,
+      passed: true
+    };
+    if(s3Idx<stage3Trials.length-1) {
+      s3Idx++;
+      renderStage3Step();
+    } else {
+      cleanupEchoRecording();
+      document.getElementById('s3Bars').innerHTML=stage3Trials.map(()=>'<div class="s-bar done"></div>').join('');
+      document.getElementById('s3Arena').style.display='none';
+      document.getElementById('s3VictoryHall').style.display='block';
+      const firstClear=!clearedStages[3];
+      clearedStages[3]=true;
+      if(firstClear) addXp(350);
+      updateStageMapUI();
+      updateTranscriptVisibility();
+      updatePlaybackUI();
+      document.getElementById('finalS1').textContent=clearedStages[1]?`${s1Score} / 3`:'已跳過';
+      document.getElementById('finalS2').textContent=`${s2Results.filter(r=>r && r.status !== 'incomplete').length} / 4`;
+      document.getElementById('finalS3').textContent=`${s3TrialResults.filter(r=>r && r.passed).length} / 5`;
+      renderCertificate();
+      renderTranscriptLists();
+      if(firstClear) {
+        openClearModal(
+          '🏆 三重試煉完成！',
+          `綜合 ${certificateEvaluation().total} 分 • ${certificateEvaluation().label}`,
+          '你已完成三關挑戰！現在可以查看依個人成績頒發的專屬級別證書，並下載圖片或另存為 PDF。完整逐字稿也已解鎖。',
+          '查看我的證書與逐字稿 ✨',
+          null
+        );
+      }
+    }
+  }
+
+
+  // ==================== CERTIFICATE & PERFORMANCE LEVEL ====================
+  // Stage 1: 30 pts (3 questions). Stage 2: 35 pts (4 questions,
+  // direct match=1, corrected after clue=.75, still incomplete=.45).
+  // Stage 3: 35 pts (30 pts from mean best passing practice score,
+  // +5 pts for 5 sentences passed on first attempt).
+  // Stage 3 scores are browser speech-to-text practice references.
+  function certificateEvaluation() {
+    const s1 = Math.max(0, Math.min(3, s1Score));
+    const first = s2Results.filter(r=>r && r.status==='first').length;
+    const second = s2Results.filter(r=>r && r.status==='second').length;
+    const incomplete = s2Results.filter(r=>r && r.status==='incomplete').length;
+    const allS2 = first+second+incomplete;
+    const passedS3 = s3TrialResults.filter(r=>r && r.passed);
+    const passedFirstTime = passedS3.filter(r=>r.firstPassAttempt===1).length;
+    const avgS3 = passedS3.length ? passedS3.reduce((sum,r)=>sum+r.score,0)/passedS3.length : 0;
+    const scoreStage1 = 30*s1/3;
+    const scoreStage2 = 35*(first+.75*second+.45*incomplete)/4;
+    const scoreStage3 = 30*avgS3/100+5*passedFirstTime/5;
+    const total = Math.round(scoreStage1+scoreStage2+scoreStage3);
+    const tier = total>=90 ? 'S' : total>=80 ? 'A' : total>=65 ? 'B' : 'C';
+    const labels = {S:'連音傳奇大師', A:'高階尋聲獵人', B:'連音探索者', C:'尋聲勇者'};
+    return {s1,first,second,incomplete,allS2,correctS2:first+second,passedS3:passedS3.length,passedFirstTime,
+      avgS3:Math.round(avgS3),scoreStage1,scoreStage2,scoreStage3,total,tier,label:labels[tier]};
+  }
+
+  function certificateDisplayDate() {
+    return new Date().toLocaleDateString('zh-TW', {year:'numeric',month:'2-digit',day:'2-digit'});
+  }
+
+  function updateCertificateName() {
+    const input=document.getElementById('certificateNameInput');
+    const name=(input.value.trim()||'尋聲冒險者').slice(0,32);
+    document.getElementById('certRecipient').textContent=name;
+  }
+
+  function renderCertificate() {
+    if (!(clearedStages[1] && clearedStages[2] && clearedStages[3])) return;
+    const result=certificateEvaluation();
+    const sheet=document.getElementById('certificateSheet');
+    sheet.dataset.tier=result.tier;
+    document.getElementById('certTierLetter').textContent=`${result.tier} 級`;
+    document.getElementById('certTierName').textContent=result.label;
+    document.getElementById('certTotalScore').textContent=`綜合評定：${result.total} / 100 分`;
+    document.getElementById('certS1Value').textContent=`${result.s1} / 3 題答對`;
+    document.getElementById('certS1Detail').textContent=`本關得分 ${result.scoreStage1.toFixed(1)} / 30 分`;
+    document.getElementById('certS2Value').textContent=`${result.correctS2} / 4 題完全正確`;
+    document.getElementById('certS2Detail').textContent=`首次全對 ${result.first} 題・提示後答對 ${result.second} 題・需加強 ${result.incomplete} 題`;
+    document.getElementById('certS3Value').textContent=`${result.passedS3} / 5 句達標`;
+    document.getElementById('certS3Detail').textContent=`平均跟讀分 ${result.avgS3} 分・首次達標 ${result.passedFirstTime} 句`;
+    document.getElementById('certDate').textContent=certificateDisplayDate();
+    updateCertificateName();
+    // The HUD XP tracks progress; the certificate indicates actual performance.
+    document.getElementById('hudRank').textContent=`🏆 ${result.tier} 級：${result.label}`;
+  }
+
+  // Produce a standalone PNG with NO external dependencies or fonts.
+  // Text fields are drawn from the same evaluated performance as the on-page certificate.
+  function downloadCertificatePng() {
+    if (!(clearedStages[1] && clearedStages[2] && clearedStages[3])) {
+      showToast('🔒 完成全部三關後才能領取證書。'); return;
+    }
+    const e=certificateEvaluation();
+    const name=document.getElementById('certRecipient').textContent;
+    const canvas=document.createElement('canvas');
+    canvas.width=1800; canvas.height=1220;
+    const c=canvas.getContext('2d');
+    if(!c) {showToast('此瀏覽器無法輸出圖片，請改用列印／另存為 PDF。');return;}
+    const accents={S:'#b78a3c',A:'#5c71ae',B:'#1c8074',C:'#687992'};
+    const gold=accents[e.tier], ink='#102340', secondary='#566981';
+    c.fillStyle='#fffaf0';c.fillRect(0,0,1800,1220);
+    c.fillStyle=ink;c.fillRect(18,18,1764,1184);
+    c.fillStyle='#fffdfa';c.fillRect(38,38,1724,1144);
+    c.strokeStyle=gold;c.lineWidth=5;c.strokeRect(76,76,1648,1068);
+    const font=(size,weight=700)=>`${weight} ${size}px "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif`;
+    const center=(txt,y,size,color=ink,weight=700)=>{
+      c.textAlign='center'; c.textBaseline='middle';c.font=font(size,weight);c.fillStyle=color;
+      // Ensure long personal names never leave the certificate.
+      const max=1510;
+      if(c.measureText(txt).width>max) c.fillText(txt,900,y,max);
+      else c.fillText(txt,900,y);
+    };
+    center('LINKING LEGENDS  ·  THE SOUND HUNT',163,23,secondary,800);
+    center('連 音 傳 奇 · 尋 聲 證 書',253,62,ink,900);
+    center('CERTIFICATE OF ACHIEVEMENT',316,25,secondary,700);
+    c.fillStyle=gold;c.fillRect(740,354,320,4);
+    center(name,427,60,ink,900);
+    center('恭喜完成英語連音三重試煉，根據各關實際成果，榮獲',499,26,secondary,500);
+    c.fillStyle= e.tier==='S'?'#fcf0d9':e.tier==='A'?'#eef2ff':e.tier==='B'?'#e8f7f3':'#eff2f6';
+    c.fillRect(492,545,816,103);
+    c.strokeStyle=gold;c.lineWidth=2;c.strokeRect(492,545,816,103);
+    center(`${e.tier} 級  ·  ${e.label}`,597,43,ink,900);
+    center(`綜合評定  ${e.total} / 100 分`,701,32,ink,800);
+    const boxes=[
+      {x:124,title:'STAGE 01  聽力理解',v:`${e.s1} / 3 題答對`,note:`本關得分 ${e.scoreStage1.toFixed(1)} / 30 分`},
+      {x:652,title:'STAGE 02  邊界狩獵',v:`${e.correctS2} / 4 題全對`,note:`首次答對 ${e.first} · 提示後答對 ${e.second} · 待加強 ${e.incomplete}`},
+      {x:1180,title:'STAGE 03  跟讀實踐',v:`${e.passedS3} / 5 句達標`,note:`平均辨識分 ${e.avgS3} · 首輪達標 ${e.passedFirstTime}`}
+    ];
+    for(const b of boxes){
+      c.fillStyle='#f5f7f9'; c.fillRect(b.x,770,496,180);
+      c.strokeStyle='#d6dae0';c.lineWidth=2;c.strokeRect(b.x,770,496,180);
+      c.textAlign='left';c.textBaseline='middle';
+      c.fillStyle=secondary;c.font=font(24,800);c.fillText(b.title,b.x+22,806);
+      c.fillStyle=ink;c.font=font(38,900);c.fillText(b.v,b.x+22,863,456);
+      c.fillStyle=secondary;c.font=font(18,500);c.fillText(b.note,b.x+22,916,456);
+    }
+    c.strokeStyle='#d9cbaa';c.lineWidth=2;c.beginPath();c.moveTo(122,1012);c.lineTo(1682,1012);c.stroke();
+    c.textAlign='left';c.textBaseline='middle';c.font=font(22,800);c.fillStyle=ink;c.fillText('Linking Legends: The Sound Hunt',125,1055);
+    c.font=font(18,500);c.fillStyle=secondary;c.fillText('遊戲學習成果｜非 TOEIC 官方證書或專業發音能力認證',125,1090);
+    c.textAlign='right';c.font=font(23,700);c.fillStyle=secondary;c.fillText(`完成日期  ${certificateDisplayDate()}`,1675,1065);
+    const safeName=name.replace(/[\\/:*?"<>|\x00-\x1f]/g,'').trim().slice(0,20)||'Learner';
+    const fileName=`Linking_Legends_${e.tier}級證書_${safeName}.png`;
+    const save=blob=>{
+      if(!blob) {showToast('圖片儲存失敗，請改用列印／另存為 PDF。');return;}
+      const url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download=fileName;document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      showToast('📜 證書圖片已產生。若手機無法直接下載，請使用列印／分享功能。');
+    };
+    if(canvas.toBlob) canvas.toBlob(save,'image/png');
+    else { const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=fileName;a.click(); }
+  }
+
+  function restartWholeQuest() {
+    stopPlayback();
+    cleanupEchoRecording();
+    unlockedStage = 1;
+    clearedStages = { 1: false, 2: false, 3: false };
+    xp = 0;
+    state.s1ListenCount = 0;
+    s1Score = 0;
+    s2Idx = 0;
+    s2ClearedCount = 0;
+    s2Results = [];
+    s3Idx = 0;
+    s3TrialResults = [];
+    s3FirstPassAttempts = null;
+    s3HighestPassingScore = 0;
+    document.getElementById('certificateNameInput').value = '';
+
+    document.getElementById('hudXp').textContent = '0 / 1000 XP';
+    document.getElementById('hudXpBar').style.width = '5%';
+    document.getElementById('hudRank').textContent = '🏅 稱號：尋聲見習生';
+
+    document.getElementById('s1SubmitBtn').disabled = false;
+    document.getElementById('s1SubmitBtn').textContent = '提交情報並驗證通關';
+    document.getElementById('s1AdvanceBtn').style.display = 'none';
+
+    document.getElementById('s2ToS3Btn').style.display = 'none';
+    document.getElementById('s3Arena').style.display = 'block';
+    document.getElementById('s3VictoryHall').style.display = 'none';
+
+    renderTranscriptLists();
+    renderStage1Questions();
+    renderStage2Step();
+    renderStage3Step();
+    updateTranscriptVisibility();
+    updatePlaybackUI();
+    trySelectStage(1);
+  }
+
+  // ==================== VOICE PLAYER CONTROLS ====================
+  btnPlayPause.addEventListener('click', () => {
+    if (!synthesis) {
+      showToast('此瀏覽器不支援語音播放，請改用 Microsoft Edge。');
+      return;
+    }
+    if (state.isPlaying && !state.isPaused) {
+      synthesis.pause();
+      state.isPaused = true;
+      updatePlaybackUI();
+    } else if (state.isPaused) {
+      synthesis.resume();
+      state.isPaused = false;
+      updatePlaybackUI();
+    } else {
+      playFromSentence(0);
+    }
+  });
+  btnStop.addEventListener('click', stopPlayback);
+  document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.playbackRate = parseFloat(btn.dataset.rate);
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateTimerDisplay();
+      if (state.isPlaying) showToast('語速設定將從下一段開始生效。');
+    });
+  });
+
+  function changeVoiceSettings() {
+    if (state.isPlaying || state.isPaused) {
+      stopPlayback();
+      showToast('已切換語音設定，請重新按下播放。');
+    } else {
+      haltSpeechEngines();
+    }
+    state.accent = accentSelect.value;
+    state.voice = voiceSelect.value;
+    updateVoiceSelectionUI();
+  }
+  accentSelect.addEventListener('change', changeVoiceSettings);
+  voiceSelect.addEventListener('change', changeVoiceSettings);
+  document.getElementById('btn-test-voice').addEventListener('click', () => {
+    stopPlayback();
+    if (speakNative(previewSentence, { rate: 1.0 })) {
+      showToast(`正在試聽 ${state.voice === 'sophia' ? 'Sophia' : 'Daniel'}（${state.accent === 'us' ? '美式' : '英式'}）`);
+    }
+  });
+
+  window.addEventListener('beforeunload', haltSpeechEngines);
+  if (synthesis) {
+    if (typeof synthesis.addEventListener === 'function') synthesis.addEventListener('voiceschanged', refreshVoices);
+    else synthesis.onvoiceschanged = refreshVoices;
+  }
+
+  // Give mobile users a practical, human-facing hint without exposing voice internals.
+  (function mobileFileHint() {
+    const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const localPreview = !['https:', 'http:'].includes(location.protocol);
+    if (!mobile || !localPreview) return;
+    const note = document.createElement('div');
+    note.className = 'mobile-audio-note';
+    note.textContent = '📱 手機直接預覽 HTML 可能無法播放或錄音。建議將遊戲放上 HTTPS 網站，再用 Safari／Chrome 開啟。';
+    const strip = document.querySelector('.control-strip');
+    if (strip) strip.appendChild(note);
+  })();
+
+  // Boot App
+  renderTranscriptLists();
+  renderStage1Questions();
+  renderStage2Step();
+  renderStage3Step();
+  updateTimerDisplay();
+  updateTranscriptVisibility();
+  updatePlaybackUI();
+  updateStageMapUI();
+
+  refreshVoices();
+  setTimeout(refreshVoices, 300);
+  setTimeout(refreshVoices, 1100);
+  setTimeout(refreshVoices, 2800);
+</script>
+</body>
+</html>
