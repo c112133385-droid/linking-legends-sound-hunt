@@ -364,6 +364,8 @@
       text-align: center;
     }
 
+    .game-toast { border-radius: 14px; line-height: 1.5; }
+
     .game-toast.show {
       transform: translateX(-50%) translateY(0);
       opacity: 1;
@@ -1279,7 +1281,7 @@
             </div>
           </div>
 
-          <div class="tp-speed-group" role="group" aria-label="語速調整">
+          <div class="tp-speed-group" role="group" aria-label="第一關語速調整（請於播放前選擇）">
             <button type="button" data-rate="0.85" class="speed-btn">0.85x 慢速</button>
             <button type="button" data-rate="1.0" class="speed-btn active">1.0x 標準</button>
             <button type="button" data-rate="1.15" class="speed-btn">1.15x 快速</button>
@@ -1749,6 +1751,11 @@
   };
 
   const S1_MAX_LISTENS = 2;
+  // Stage 01 speed controls apply only to the full talk. Stage 02/03 have
+  // independent model rates so an earlier selection cannot leak forward.
+  const S2_NORMAL_RATE = 1.0;
+  const S2_SLOW_RATE = 0.85;
+  const S3_MODEL_RATE = 1.0;
 
   let unlockedStage = 1;
   let clearedStages = { 1: false, 2: false, 3: false };
@@ -1809,57 +1816,71 @@
   let activeUtterance = null;
   let voiceSession = 0;
 
+  // Strictly match BOTH locale and a recognisable female/male voice.
+  // Browser TTS provides voice.name and voice.lang, but no standard gender
+  // property. Never silently replace a requested role with an unknown voice.
   const preferredNames = {
     us: {
-      sophia: ['sophia', 'ava', 'aria', 'jenny', 'emma', 'michelle', 'samantha', 'zira', 'allison'],
-      daniel: ['daniel', 'andrew', 'guy', 'brian', 'eric', 'davis', 'david', 'roger', 'alex']
+      sophia: ['sophia', 'ava', 'aria', 'jenny', 'emma', 'michelle', 'samantha', 'zira', 'allison', 'joanna', 'salli', 'kimberly', 'kendra', 'ivy', 'susan', 'kathy', 'victoria'],
+      daniel: ['daniel', 'andrew', 'guy', 'brian', 'eric', 'davis', 'david', 'roger', 'alex', 'matthew', 'justin', 'joey', 'aaron', 'kevin', 'michael', 'fred', 'tom']
     },
     uk: {
-      sophia: ['sophia', 'sonia', 'libby', 'maisie', 'kate', 'serena', 'hazel', 'amy', 'susan'],
-      daniel: ['daniel', 'ryan', 'thomas', 'oliver', 'daniel', 'george', 'arthur', 'peter']
+      sophia: ['sophia', 'sonia', 'libby', 'maisie', 'kate', 'serena', 'hazel', 'amy', 'susan', 'martha', 'stephanie', 'emma', 'olivia', 'alice'],
+      daniel: ['daniel', 'ryan', 'thomas', 'oliver', 'george', 'arthur', 'peter', 'jamie', 'james', 'ben', 'martin', 'alfie']
     }
   };
+  const declaredFemaleNames = [...new Set([
+    ...preferredNames.us.sophia, ...preferredNames.uk.sophia
+  ])];
+  const declaredMaleNames = [...new Set([
+    ...preferredNames.us.daniel, ...preferredNames.uk.daniel
+  ])];
 
   function availableForAccent(v, accent) {
-    const lang = String(v.lang || '').toLowerCase().replace('_', '-');
+    const desiredLocale = localeMap[accent].toLowerCase();
+    const language = String(v.lang || '').trim().toLowerCase().replace(/_/g, '-');
+    // Do not turn en-AU or generic en into an en-US/en-GB voice.
+    if (language) return language === desiredLocale || language.startsWith(desiredLocale + '-');
+    // Extremely rare engines omit lang; accept a clearly labelled region only.
     const name = String(v.name || '').toLowerCase();
-    const country = accent === 'uk' ? 'united kingdom' : 'united states';
-    return lang.startsWith(localeMap[accent].toLowerCase()) ||
-      (name.includes('english') && name.includes(country));
+    const country = accent === 'uk' ? /\b(united kingdom|british|en-gb)\b/ : /\b(united states|american|en-us)\b/;
+    return /english/.test(name) && country.test(name);
   }
+
   function isNaturalVoice(v) {
     return /online\s*\(natural\)|\bnatural\b|\bneural\b|\bpremium\b/i.test(String(v.name));
   }
-  function voiceGenderCategory(v, accent) {
+
+  function voiceGenderCategory(v) {
     const name = String(v.name || '').toLowerCase();
-    const femaleNames = [...preferredNames.us.sophia, ...preferredNames.uk.sophia];
-    const maleNames = [...preferredNames.us.daniel, ...preferredNames.uk.daniel];
-    if (femaleNames.some(n => new RegExp('\\b' + n + '\\b', 'i').test(name))) return 'sophia';
-    if (maleNames.some(n => new RegExp('\\b' + n + '\\b', 'i').test(name))) return 'daniel';
-    // Some OS voices describe their gender directly rather than using a known name.
-    if (/\bfemale\b|\bwoman\b/i.test(name)) return 'sophia';
-    if (/\bmale\b|\bman\b/i.test(name)) return 'daniel';
+    if (/\bfemale\b|\bwoman\b/.test(name)) return 'sophia';
+    if (/\bmale\b|\bman\b/.test(name)) return 'daniel';
+    // The standard SpeechSynthesisVoice interface contains no gender field;
+    // names below are known voices, not inferred from accent or pitch.
+    const nameHas = word => new RegExp('\\b' + word + '\\b', 'i').test(name);
+    const isFemale = declaredFemaleNames.some(nameHas);
+    const isMale = declaredMaleNames.some(nameHas);
+    if (isFemale !== isMale) return isFemale ? 'sophia' : 'daniel';
     return 'unknown';
   }
+
   function voiceScore(v, accent, persona) {
-    const n = String(v.name || '').toLowerCase();
-    const rank = preferredNames[accent][persona].findIndex(preferred =>
-      new RegExp('\\b' + preferred + '\\b', 'i').test(n));
-    const known = voiceGenderCategory(v, accent);
-    let score = isNaturalVoice(v) ? 110 : 0;
-    if (/online/i.test(n)) score += 5;
-    if (known === persona) score += 60;
-    if (known !== 'unknown' && known !== persona) score -= 500;
-    if (rank !== -1) score += 35 - rank;
-    return score;
+    const name = String(v.name || '').toLowerCase();
+    const order = preferredNames[accent][persona];
+    const rank = order.findIndex(word => new RegExp('\\b' + word + '\\b', 'i').test(name));
+    // Within a VERIFIED accent/gender pair, prefer clearer natural voices.
+    return (isNaturalVoice(v) ? 100 : 0) +
+      (/online/i.test(name) ? 6 : 0) +
+      (rank >= 0 ? 45 - rank : 0);
   }
 
   function resolveSystemVoice() {
     if (!synthesis) return null;
-    const accentVoices = systemVoices.filter(v => availableForAccent(v, state.accent));
-    const sorted = accentVoices.slice().sort((a, b) =>
-      voiceScore(b, state.accent, state.voice) - voiceScore(a, state.accent, state.voice));
-    return sorted[0] || null;
+    const matching = systemVoices.filter(v =>
+      availableForAccent(v, state.accent) && voiceGenderCategory(v) === state.voice);
+    matching.sort((a, b) => voiceScore(b, state.accent, state.voice) -
+      voiceScore(a, state.accent, state.voice));
+    return matching[0] || null;
   }
 
   function updateVoiceSelectionUI() {
@@ -1875,8 +1896,15 @@
       return;
     }
     const voices = synthesis.getVoices();
+    // Keep a previously loaded list during transient mobile empty responses.
     if (voices.length) systemVoices = voices;
     updateVoiceSelectionUI();
+  }
+
+  function selectedVoiceUnavailableMessage() {
+    const role = state.voice === 'sophia' ? '女聲 Sophia' : '男聲 Daniel';
+    const locale = state.accent === 'us' ? '美式' : '英式';
+    return `⚠️ 這個瀏覽器目前沒有可確認的${locale}${role}。請改用 Edge／Safari 或安裝對應的英語聲線，不會改播錯誤口音或男女聲。`;
   }
 
   // On iOS, cancel() may resolve asynchronously; do not cancel an idle engine
@@ -1897,11 +1925,16 @@
       if (options.onFailure) options.onFailure('unsupported');
       return false;
     }
-    // iOS getVoices() can stay empty until after a user tap. Do not refuse to
-    // speak: when no matching voice is listed, let the OS use u.lang.
-    if (!chosenVoice) refreshVoices();
+    // Require a confirmed locale AND gender. Do not silently use the OS's
+    // default voice, which can be the wrong gender, locale, or even language.
+    refreshVoices();
+    if (!chosenVoice) {
+      showToast(selectedVoiceUnavailableMessage());
+      if (options.onFailure) options.onFailure('no-matching-voice');
+      return false;
+    }
     const u = new SpeechSynthesisUtterance(text);
-    if (chosenVoice) u.voice = chosenVoice;
+    u.voice = chosenVoice;
     u.lang = localeMap[state.accent];
     u.rate = options.rate ?? state.playbackRate;
     u.pitch = 1.0;
@@ -1981,7 +2014,7 @@
   }
 
   function updateTimerDisplay() {
-    const estimatedTotal = Math.round(90 / state.playbackRate);
+    const estimatedTotal = Math.round(90 / state.playbackRate); // Indicative, not a fixed audio duration.
     timerDisplay.textContent = `${formatSeconds(state.elapsedSeconds)} / 約${formatSeconds(estimatedTotal)}`;
   }
 
@@ -2005,7 +2038,8 @@
   // Stage 2 and Stage 3 use the same chosen browser voice and accent.
   function speakOneLineDirect(text, customRate = null, kind = null, index = null, callbacks = {}) {
     stopPlayback();
-    return speakNative(text, { rate: customRate ?? state.playbackRate, ...callbacks });
+    // Unlike Stage 01, exercise-model speed must never inherit its selected rate.
+    return speakNative(text, { rate: customRate ?? S3_MODEL_RATE, ...callbacks });
   }
 
   function updatePlaybackUI() {
@@ -2047,6 +2081,12 @@
       liveDot.classList.remove('live');
     }
 
+    // The three paragraphs are queued immediately. Rate changes on a queued
+    // utterance are not reliable, so require selecting the rate before play.
+    document.querySelectorAll('.speed-btn').forEach(b => {
+      b.disabled = state.isPlaying || state.isPaused;
+      b.title = b.disabled ? '播放中無法切換語速；請在下次播放前選擇' : '';
+    });
     const pct = state.currentSentenceIndex >= 0
       ? Math.round(((state.currentSentenceIndex + 1) / allSentences.length) * 100)
       : 0;
@@ -2089,7 +2129,13 @@
       showToast('🔒 Stage 01 最多聆聽 2 次，完成全部三關後可自由重聽。');
       return;
     }
-    refreshVoices(); // Never block merely because the OS voice list is delayed.
+    refreshVoices();
+    // Fail before queueing any paragraph; avoid a 3x error cascade when a
+    // requested locale/gender voice isn't available on this device.
+    if (!synthesis || !chosenVoice) {
+      showToast(synthesis ? selectedVoiceUnavailableMessage() : '⚠️ 此瀏覽器不支援網頁語音播放。');
+      return;
+    }
     haltSpeechEngines();
     const session = voiceSession;
     const paragraphs = monologueParagraphs.map(p => ({
@@ -2174,6 +2220,10 @@
 
   function stopPlayback() {
     haltSpeechEngines();
+    // Canceling the voice while Stage 02 is playing must not leave its
+    // listening buttons permanently disabled.
+    s2AudioPending = false;
+    if (document.getElementById('s2ListenNormalBtn')) updateHunterListeningUI();
     state.isPlaying = false;
     state.isPaused = false;
     state.currentSentenceIndex = -1;
@@ -2305,6 +2355,10 @@
       if (document.querySelector(`input[name="s1q${qIdx}"]:checked`)) answered++;
     });
 
+    if (state.s1ListenCount === 0) {
+      showToast('🔊 請先聆聽晨會公告，再提交聽力理解題。');
+      return;
+    }
     if (answered < stage1Questions.length) {
       showToast('⚠️ 請先回答全部 3 題情報驗證題再提交！');
       return;
@@ -2406,6 +2460,9 @@
         : '🔒 提示後額外重聽的 1 次機會已用完，請提交第二次答案。');
       return;
     }
+    // Stop any earlier voice first, then mark this exercise as pending.
+    // This prevents a global stop/preview from retaining a stale pending flag.
+    stopPlayback();
     s2AudioPending = true;
     updateHunterListeningUI();
     const targetIndex = s2Idx;
@@ -2414,7 +2471,8 @@
       s2AudioPending = false;
       updateHunterListeningUI();
     };
-    const started = speakOneLineDirect(stage2Targets[s2Idx].raw, customRate, 'hunter', s2Idx, {
+    const rate = customRate === null ? S2_NORMAL_RATE : customRate;
+    const started = speakNative(stage2Targets[s2Idx].raw, { rate,
       onStart: () => {
         if (targetIndex !== s2Idx) return;
         // Count ONLY audible utterances that reached the speech start event.
@@ -2780,7 +2838,7 @@
   function playEchoModel() {
     if (!canEnterStage(3) || currentStage !== 3) return;
     if(isRecording || s3IsAnalyzing) { showToast('請先停止錄音或等待辨識完成。'); return; }
-    speakOneLineDirect(stage3Trials[s3Idx].raw,null,'echo',s3Idx);
+    speakOneLineDirect(stage3Trials[s3Idx].raw,S3_MODEL_RATE,'echo',s3Idx);
   }
 
   async function toggleEchoRecording() {
@@ -3131,6 +3189,10 @@
     clearedStages = { 1: false, 2: false, 3: false };
     xp = 0;
     state.s1ListenCount = 0;
+    state.playbackRate = 1.0;
+    document.querySelectorAll('.speed-btn').forEach(b =>
+      b.classList.toggle('active', Number(b.dataset.rate) === 1.0));
+    updateTimerDisplay();
     s1Score = 0;
     s2Idx = 0;
     s2ClearedCount = 0;
@@ -3183,24 +3245,25 @@
   btnStop.addEventListener('click', stopPlayback);
   document.querySelectorAll('.speed-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (state.isPlaying || state.isPaused) {
+        showToast('請先停止播放，再切換第一關語速。');
+        return;
+      }
       state.playbackRate = parseFloat(btn.dataset.rate);
       document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       updateTimerDisplay();
-      if (state.isPlaying) showToast('語速設定將從下一段開始生效。');
     });
   });
 
   function changeVoiceSettings() {
-    if (state.isPlaying || state.isPaused) {
-      stopPlayback();
-      showToast('已切換語音設定，請重新按下播放。');
-    } else {
-      haltSpeechEngines();
-    }
+    const hadAudio = state.isPlaying || state.isPaused || s2AudioPending;
+    stopPlayback();
+    if (hadAudio) showToast('已切換語音設定，請重新按下播放。');
     state.accent = accentSelect.value;
     state.voice = voiceSelect.value;
-    updateVoiceSelectionUI();
+    refreshVoices();
+    if (systemVoices.length && !chosenVoice) showToast(selectedVoiceUnavailableMessage());
   }
   accentSelect.addEventListener('change', changeVoiceSettings);
   voiceSelect.addEventListener('change', changeVoiceSettings);
