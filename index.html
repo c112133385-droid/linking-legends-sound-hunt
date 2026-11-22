@@ -1243,7 +1243,7 @@
       </div>
 
       <div class="lore-box">
-        <strong>🎯 關卡任務：</strong>外商部門主管正在進行 90 秒晨會廣播，但密集連音形成了一層「聽覺迷霧」。請在<strong>不看逐字稿</strong>的條件下<strong>盲聽最多兩次</strong>，並成功攔截 3 項關鍵情報（單選題）即可開啟通往第二關的傳送門！
+        <strong>🎯 關卡任務：</strong>外商部門主管正在進行晨會廣播，但密集連音形成了一層「聽覺迷霧」。請在<strong>不看逐字稿</strong>的條件下<strong>盲聽最多兩次（至少完整聽完一次）</strong>，並成功攔截 3 項關鍵情報（單選題）即可開啟通往第二關的傳送門！
       </div>
 
       <!-- Embedded Proven TOEIC Part 4 90s Audio Player -->
@@ -1277,7 +1277,7 @@
 
             <div class="tp-timer">
               <span id="live-dot" class="tp-dot"></span>
-              <span id="timer-display">00:00 / 約 01:30</span>
+              <span id="timer-display">已播放 00:00</span>
             </div>
           </div>
 
@@ -1556,7 +1556,7 @@
 
 <script>
   /**
-   * 90秒 TOEIC Part 4 職場廣播講稿資料 (直接沿用可正常播放的 3 段 10 句架構)
+   * TOEIC Part 4 職場廣播講稿資料 (直接沿用可正常播放的 3 段 10 句架構)
    */
   const monologueParagraphs = [
     {
@@ -1674,26 +1674,26 @@
 
   const stage2Targets = [
     {
-      raw: "Before we start our regular Monday meeting, I want to give you a quick update about the renovations on the third floor.",
+      raw: allSentences[1].text,
       marked: 'Before we <span class="arc">start‿our</span> regular Monday meeting, I want to give you a <span class="arc">quick‿update‿about</span> the <span class="arc">renovations‿on</span> the third floor.',
       linkedWords: ["start", "our", "quick", "update", "about", "renovations", "on"],
       detail: "<strong>連音拆解：</strong><br>• <code>start‿our</code>：字尾 /t/ 與母音 <code>our</code> 連讀。<br>• <code>quick‿update‿about</code>：/k/ 接 /ʌ/，接著 /t/ 接 /ə/，三詞緊密相連。<br>• <code>renovations‿on</code>：複數字尾 /z/ 直接滑入介系詞 <code>on</code>。"
     },
     {
-      raw: "Because of the noise, all client meetings scheduled for the rest of the week will be moved to the training center.",
-      marked: '<span class="arc">Because‿of</span> the noise, all client meetings scheduled for the <span class="arc">rest‿of</span> the week will be moved to the training center.',
+      raw: allSentences[3].text,
+      marked: '<span class="arc">Because‿of</span> the noise, all client meetings scheduled for the <span class="arc">rest‿of</span> the week will be moved to the training center on the ground floor.',
       linkedWords: ["because", "of", "rest", "of", "scheduled"],
       detail: "<strong>連音拆解：</strong><br>• <code>Because‿of</code>：字尾 /z/ 連讀弱化的 <code>of</code> (/bɪˈkɔːz əv/)。<br>• <code>rest‿of</code>：字尾 /t/ 連讀 <code>of</code> (/rɛst əv/)。"
     },
     {
-      raw: "Please make sure you register their name on the company portal at least an hour in advance.",
-      marked: 'Please make sure you register their <span class="arc">name‿on</span> the company portal <span class="arc">at least‿an‿hour‿in‿advance</span>.',
+      raw: allSentences[5].text,
+      marked: 'Whenever you invite an outside guest to the office, please make sure you register their <span class="arc">name‿on</span> the company portal <span class="arc">at least‿an‿hour‿in‿advance</span>.',
       linkedWords: ["name", "on", "at", "least", "an", "hour", "in", "advance"],
       detail: "<strong>連音拆解：</strong><br>• <code>name‿on</code>：/m/ 連讀 <code>on</code>。<br>• <code>at least‿an‿hour‿in‿advance</code>：<code>least</code> 的 /t/ 連 <code>an</code>，/n/ 連不發音 h 的 <code>hour</code>，/r/ 連 <code>in</code>，/n/ 再連 <code>advance</code>。"
     },
     {
-      raw: "If you haven't signed up for a breakout session yet, please send an email to Sarah by five o'clock today.",
-      marked: `If you haven’t <span class="arc">signed‿up</span> for a breakout session yet, please <span class="arc">send‿an‿email</span> to Sarah by <span class="arc">five‿o'clock</span> today.`,
+      raw: allSentences[8].text,
+      marked: `If you haven’t <span class="arc">signed‿up</span> for a breakout session yet, please <span class="arc">send‿an‿email</span> to Sarah in Human Resources by <span class="arc">five‿o'clock</span> today so she can finalize the headcount.`,
       linkedWords: ["signed", "up", "send", "an", "email", "five", "o'clock"],
       detail: "<strong>連音拆解：</strong><br>• <code>signed‿up</code>：字尾 /d/ 連讀 <code>up</code> (/saɪnd ʌp/)。<br>• <code>send‿an‿email</code>：/d/ 連讀弱化的 <code>an</code>，/n/ 再連讀 <code>email</code>。<br>• <code>five‿o'clock</code>：/v/ 與 <code>o'clock</code> 開頭母音連讀。"
     }
@@ -1746,8 +1746,10 @@
     playbackRate: 1.0,
     elapsedSeconds: 0,
     timerInterval: null,
+    timerLastTick: null,
     sessionId: 0,
-    s1ListenCount: 0
+    s1ListenCount: 0,
+    s1FullListenCount: 0
   };
 
   const S1_MAX_LISTENS = 2;
@@ -2013,19 +2015,30 @@
     return `${m}:${s}`;
   }
 
+  // Web Speech TTS does not report a predictable total duration. Show only
+  // elapsed time actually spent playing, never a fictional 90-second total.
   function updateTimerDisplay() {
-    const estimatedTotal = Math.round(90 / state.playbackRate); // Indicative, not a fixed audio duration.
-    timerDisplay.textContent = `${formatSeconds(state.elapsedSeconds)} / 約${formatSeconds(estimatedTotal)}`;
+    timerDisplay.textContent = `已播放 ${formatSeconds(state.elapsedSeconds)}`;
+  }
+
+  // Calculate from a monotonic clock instead of counting setInterval ticks:
+  // background-tab throttling should not make the timer run slower than audio.
+  function syncPlaybackElapsed() {
+    if (state.timerLastTick === null) return;
+    const now = performance.now();
+    state.elapsedSeconds += Math.max(0, now - state.timerLastTick) / 1000;
+    state.timerLastTick = now;
   }
 
   function startTimer() {
     stopTimer();
+    state.timerLastTick = performance.now();
     state.timerInterval = setInterval(() => {
       if (state.isPlaying && !state.isPaused) {
-        state.elapsedSeconds += 1;
+        syncPlaybackElapsed();
         updateTimerDisplay();
       }
-    }, 1000);
+    }, 250);
   }
 
   function stopTimer() {
@@ -2033,6 +2046,7 @@
       clearInterval(state.timerInterval);
       state.timerInterval = null;
     }
+    state.timerLastTick = null;
   }
 
   // Stage 2 and Stage 3 use the same chosen browser voice and accent.
@@ -2153,8 +2167,11 @@
     renderTranscriptLists();
     updatePlaybackUI();
     let countedFirstStart = false;
+    let completedParagraphs = 0;
     const abortOnFailure = () => {
       if (session !== voiceSession) return;
+      syncPlaybackElapsed();
+      updateTimerDisplay();
       haltSpeechEngines();
       state.isPlaying = false;
       state.isPaused = false;
@@ -2165,6 +2182,13 @@
     };
     function finishFullPlayback() {
       if (voiceSession !== session) return;
+      syncPlaybackElapsed();
+      updateTimerDisplay();
+      // A complete listen requires all paragraphs to end naturally in sequence.
+      // Stopping or switching voices cancels the session and never counts.
+      if (index === 0 && completedParagraphs === paragraphs.length) {
+        state.s1FullListenCount++;
+      }
       state.isPlaying = false;
       state.isPaused = false;
       state.currentSentenceIndex = -1;
@@ -2211,6 +2235,7 @@
         },
         onEnd: () => {
           if (session !== voiceSession) return;
+          completedParagraphs++;
           if (p === paragraphs.length - 1) finishFullPlayback();
         },
         onFailure: abortOnFailure
@@ -2251,7 +2276,7 @@
     for (let i = 1; i <= 3; i++) {
       const node = document.getElementById(`node-${i}`);
       const icon = document.getElementById(`icon-${i}`);
-      const isAvailable = (i === 1) || (i === 2 && clearedStages[1]) || (i === 3 && clearedStages[1] && clearedStages[2]);
+      const isAvailable = (i === 1) || (i === 2 && clearedStages[1] && state.s1FullListenCount > 0) || (i === 3 && clearedStages[1] && clearedStages[2] && state.s1FullListenCount > 0);
       node.disabled = !isAvailable;
       node.setAttribute('aria-disabled', String(!isAvailable));
       node.title = isAvailable ? `Stage 0${i}` : (i === 2 ? '完成 Stage 01 才能開啟' : '完成 Stage 02 才能開啟');
@@ -2287,14 +2312,18 @@
   }
 
   function canEnterStage(stageNum) {
-    return stageNum === 1 || (stageNum === 2 && clearedStages[1]) ||
-      (stageNum === 3 && clearedStages[1] && clearedStages[2]);
+    return stageNum === 1 || (stageNum === 2 && clearedStages[1] && state.s1FullListenCount > 0) ||
+      (stageNum === 3 && clearedStages[1] && clearedStages[2] && state.s1FullListenCount > 0);
   }
 
   function trySelectStage(stageNum) {
     if (!canEnterStage(stageNum)) {
-      const prerequisite = stageNum === 2 ? 'Stage 01' : 'Stage 02';
-      showToast(`🔒 請先完成 ${prerequisite} 全部題目才能進入下一關。`);
+      if (stageNum >= 2 && state.s1FullListenCount === 0) {
+        showToast('🔒 請先將 Stage 01 晨會公告從頭到尾完整聽完至少一次，並完成三題作答。');
+      } else {
+        const prerequisite = stageNum === 2 ? 'Stage 01' : 'Stage 02';
+        showToast(`🔒 請先完成 ${prerequisite} 全部題目才能進入下一關。`);
+      }
       return;
     }
 
@@ -2355,8 +2384,8 @@
       if (document.querySelector(`input[name="s1q${qIdx}"]:checked`)) answered++;
     });
 
-    if (state.s1ListenCount === 0) {
-      showToast('🔊 請先聆聽晨會公告，再提交聽力理解題。');
+    if (state.s1FullListenCount === 0) {
+      showToast('🔊 請先從頭到尾完整聽完至少一次晨會公告，再提交聽力理解題。');
       return;
     }
     if (answered < stage1Questions.length) {
@@ -3189,6 +3218,7 @@
     clearedStages = { 1: false, 2: false, 3: false };
     xp = 0;
     state.s1ListenCount = 0;
+    state.s1FullListenCount = 0;
     state.playbackRate = 1.0;
     document.querySelectorAll('.speed-btn').forEach(b =>
       b.classList.toggle('active', Number(b.dataset.rate) === 1.0));
@@ -3231,12 +3261,16 @@
       return;
     }
     if (state.isPlaying && !state.isPaused) {
+      syncPlaybackElapsed();
       synthesis.pause();
       state.isPaused = true;
+      state.timerLastTick = null;
+      updateTimerDisplay();
       updatePlaybackUI();
     } else if (state.isPaused) {
       synthesis.resume();
       state.isPaused = false;
+      state.timerLastTick = performance.now();
       updatePlaybackUI();
     } else {
       playFromSentence(0);
