@@ -1636,6 +1636,18 @@
     }))
   );
 
+  // Stage 01 progress is tied to reported speech character positions, NOT
+  // completed sentences/paragraphs. Offsets match the three TTS paragraphs.
+  const s1SentenceCharOffsets = [];
+  let s1TotalSpeechChars = 0;
+  monologueParagraphs.forEach(para => {
+    para.sentences.forEach((sentence, index) => {
+      s1SentenceCharOffsets[sentence.id] = s1TotalSpeechChars;
+      s1TotalSpeechChars += sentence.text.length;
+      if (index < para.sentences.length - 1) s1TotalSpeechChars += 1; // joined by one space
+    });
+  });
+
   const stage1Questions = [
     {
       q: "1. What is the main purpose of the talk?",
@@ -1749,7 +1761,9 @@
     timerLastTick: null,
     sessionId: 0,
     s1ListenCount: 0,
-    s1FullListenCount: 0
+    s1FullListenCount: 0,
+    s1CompletedSentences: 0,
+    s1ProgressChars: 0
   };
 
   const S1_MAX_LISTENS = 2;
@@ -1841,39 +1855,55 @@
   function availableForAccent(v, accent) {
     const desiredLocale = localeMap[accent].toLowerCase();
     const language = String(v.lang || '').trim().toLowerCase().replace(/_/g, '-');
-    // Do not turn en-AU or generic en into an en-US/en-GB voice.
-    if (language) return language === desiredLocale || language.startsWith(desiredLocale + '-');
-    // Extremely rare engines omit lang; accept a clearly labelled region only.
-    const name = String(v.name || '').toLowerCase();
-    const country = accent === 'uk' ? /\b(united kingdom|british|en-gb)\b/ : /\b(united states|american|en-us)\b/;
-    return /english/.test(name) && country.test(name);
-  }
-
-  function isNaturalVoice(v) {
-    return /online\s*\(natural\)|\bnatural\b|\bneural\b|\bpremium\b/i.test(String(v.name));
+    // The voice locale must match the chosen accent. A different explicit
+    // English locale, such as en-AU, must never stand in for en-US/en-GB.
+    if (language === desiredLocale || language.startsWith(desiredLocale + '-')) return true;
+    if (language && language !== 'en' && language !== 'en-001') return false;
+    // Some mobile engines expose only a generic language code. In that case
+    // use an explicit region embedded in the voice name or URI, never a guess.
+    const description = `${v.name || ''} ${v.voiceURI || ''}`.toLowerCase();
+    return accent === 'uk'
+      ? /\b(united kingdom|british|uk english|en[-_]gb)\b/.test(description)
+      : /\b(united states|american|us english|en[-_]us)\b/.test(description);
   }
 
   function voiceGenderCategory(v) {
-    const name = String(v.name || '').toLowerCase();
-    if (/\bfemale\b|\bwoman\b/.test(name)) return 'sophia';
-    if (/\bmale\b|\bman\b/.test(name)) return 'daniel';
-    // The standard SpeechSynthesisVoice interface contains no gender field;
-    // names below are known voices, not inferred from accent or pitch.
-    const nameHas = word => new RegExp('\\b' + word + '\\b', 'i').test(name);
+    // SpeechSynthesisVoice does not expose a standard gender field. Use an
+    // explicit label (including voiceURI) or well-known voice name only.
+    const description = `${v.name || ''} ${v.voiceURI || ''}`.toLowerCase();
+    const hasFemale = /\b(female|woman|feminine)\b/.test(description);
+    const hasMale = /\b(male|man|masculine)\b/.test(description);
+    if (hasFemale !== hasMale) return hasFemale ? 'sophia' : 'daniel';
+    const nameHas = word => new RegExp('\\b' + word + '\\b', 'i').test(description);
     const isFemale = declaredFemaleNames.some(nameHas);
     const isMale = declaredMaleNames.some(nameHas);
     if (isFemale !== isMale) return isFemale ? 'sophia' : 'daniel';
     return 'unknown';
   }
 
+  function voiceQualityTier(v) {
+    // These labels are quality *hints*, not a guaranteed acoustic measure.
+    // Voice quality and naturalness differ by OS, browser and voice package.
+    const name = `${v.name || ''} ${v.voiceURI || ''}`.toLowerCase();
+    if (/\b(natural|neural|wavenet|studio)\b/.test(name)) return 5;
+    if (/\b(premium|enhanced|high[ -]?quality|high[ -]?definition|siri)\b/.test(name)) return 4;
+    if (/\b(compact|legacy|basic|espeak|novelty)\b/.test(name)) return 0;
+    if (/\b(google|microsoft)\b/.test(name)) return 3;
+    return 2;
+  }
+
   function voiceScore(v, accent, persona) {
     const name = String(v.name || '').toLowerCase();
     const order = preferredNames[accent][persona];
     const rank = order.findIndex(word => new RegExp('\\b' + word + '\\b', 'i').test(name));
-    // Within a VERIFIED accent/gender pair, prefer clearer natural voices.
-    return (isNaturalVoice(v) ? 100 : 0) +
-      (/online/i.test(name) ? 6 : 0) +
-      (rank >= 0 ? 45 - rank : 0);
+    const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // Only compare voices which already passed *both* locale and gender.
+    // Prefer voices labelled natural/neural, then premium/enhanced, then other
+    // recognised good-quality engines. Avoid compact/legacy voices where possible.
+    return voiceQualityTier(v) * 1000 +
+      (rank >= 0 ? 120 - rank * 2 : 0) +
+      (mobile && v.localService === true ? 4 : 0) +
+      (v.default ? 1 : 0);
   }
 
   function resolveSystemVoice() {
@@ -1962,12 +1992,15 @@
       if (options.onStart) options.onStart();
     };
     u.onboundary = e => {
-      if (ticket === voiceSession && !finished && options.onBoundary)
-        options.onBoundary(e.charIndex || 0);
+      // A missing charIndex is NOT position 0: reporting zero would falsely
+      // switch the displayed sentence back to the start of a paragraph.
+      if (ticket === voiceSession && !finished && options.onBoundary &&
+          Number.isFinite(e.charIndex) && e.charIndex >= 0)
+        options.onBoundary(e.charIndex);
     };
     u.onend = () => {
       if (ticket !== voiceSession || finished) return;
-      if (!actuallyStarted) { failed('no-start-event'); return; }
+      if (!actuallyStarted && !options.allowEndWithoutStart) { failed('no-start-event'); return; }
       finished = true;
       clearWatch();
       if (activeUtterance === u) activeUtterance = null;
@@ -2063,7 +2096,9 @@
       btnPlayPause.disabled = false;
       btnStop.disabled = false;
       equalizer.classList.add('eq-active');
-      statusText.textContent = `播報中 (${state.currentSentenceIndex + 1}/${allSentences.length} 句)`;
+      // Always retain the last known sentence until the next begins.
+      // Never flash 「等待語音同步」 between sentences.
+      statusText.textContent = `播報中（第 ${Math.max(0, state.currentSentenceIndex) + 1} / ${allSentences.length} 句）`;
       statusText.style.color = '#4338ca';
       liveDot.classList.add('live');
     } else if (state.isPaused) {
@@ -2101,10 +2136,17 @@
       b.disabled = state.isPlaying || state.isPaused;
       b.title = b.disabled ? '播放中無法切換語速；請在下次播放前選擇' : '';
     });
-    const pct = state.currentSentenceIndex >= 0
-      ? Math.round(((state.currentSentenceIndex + 1) / allSentences.length) * 100)
-      : 0;
-    progressBar.style.width = `${pct}%`;
+    updateStage1ProgressBar();
+  }
+
+  function updateStage1ProgressBar() {
+    // onboundary reports actual offsets within an utterance whenever supported;
+    // otherwise onstart/onend at least keep the three paragraph boundaries accurate.
+    // Web Speech has no precise media duration, so this is text-position progress.
+    const pct = Math.max(0, Math.min(100,
+      100 * state.s1ProgressChars / Math.max(1, s1TotalSpeechChars)));
+    progressBar.style.width = `${pct.toFixed(2)}%`;
+    progressBar.setAttribute('aria-valuenow', String(Math.round(pct)));
   }
 
   function renderTranscriptLists() {
@@ -2130,9 +2172,19 @@
   }
 
   /**
-   * Stage 1: enqueue ALL paragraphs synchronously on the user's tap.
-   * iOS Safari may reject paragraph 2/3 if speak() is first called from onend,
-   * which is no longer a direct user gesture.
+   * Stage 01: queue the original THREE PARAGRAPHS rather than TEN separate
+   * utterances. The browser can speak each paragraph as natural continuous
+   * prose, with only intentional paragraph pauses.
+   *
+   * Where onboundary/charIndex is provided, the displayed sentence follows
+   * the ACTUAL position inside each paragraph. Engines without word boundary
+   * callbacks keep the last known sentence number (and move at paragraph
+   * boundaries); there is no fake timer-based sentence prediction.
+   *
+   * All three paragraphs are queued synchronously from the user's click
+   * for iOS Safari compatibility. Completion is still based on the final
+   * utterance's normal onend; stopping, changing voice or leaving invalidates
+   * the session. No sound files are needed.
    */
   function playFromSentence(index, bypassOneTimeLock = false) {
     if (bypassOneTimeLock && !clearedStages[3]) {
@@ -2144,32 +2196,60 @@
       return;
     }
     refreshVoices();
-    // Fail before queueing any paragraph; avoid a 3x error cascade when a
-    // requested locale/gender voice isn't available on this device.
     if (!synthesis || !chosenVoice) {
       showToast(synthesis ? selectedVoiceUnavailableMessage() : '⚠️ 此瀏覽器不支援網頁語音播放。');
       return;
     }
     haltSpeechEngines();
     const session = voiceSession;
-    const paragraphs = monologueParagraphs.map(p => ({
-      ...p,
-      sentences: p.sentences.filter(s => s.id >= index)
-    })).filter(p => p.sentences.length);
-    if (!paragraphs.length) return;
-    if (index === 0 && !state.isPlaying) {
-      state.elapsedSeconds = 0;
-      updateTimerDisplay();
-    }
+
+    // Preserve exact original sentences; join adjacent sentences only within
+    // the same paragraph so the TTS engine handles rhythm and sentence pauses.
+    const speechChunks = monologueParagraphs.map(para => {
+      const eligible = para.sentences.filter(sentence => sentence.id >= index);
+      if (!eligible.length) return null;
+      let text = '';
+      const positions = [];
+      eligible.forEach(sentence => {
+        if (text) text += ' ';
+        positions.push({ id: sentence.id, start: text.length });
+        text += sentence.text;
+      });
+      return { text, positions, firstId: eligible[0].id,
+        lastId: eligible[eligible.length - 1].id,
+        progressStart: s1SentenceCharOffsets[eligible[0].id] };
+    }).filter(Boolean);
+    if (!speechChunks.length) return;
+
+    state.elapsedSeconds = 0;
+    state.s1CompletedSentences = index;
+    state.s1ProgressChars = s1SentenceCharOffsets[index] || 0;
+    updateTimerDisplay();
     state.currentSentenceIndex = index;
     state.isPlaying = true;
     state.isPaused = false;
     renderTranscriptLists();
     updatePlaybackUI();
+
     let countedFirstStart = false;
-    let completedParagraphs = 0;
+    let completedChunks = 0;
+    const requestedAt = performance.now();
+    let ended = false;
+    const markPlaybackStarted = () => {
+      if (session !== voiceSession || countedFirstStart) return;
+      countedFirstStart = true;
+      if (!clearedStages[3] && index === 0) state.s1ListenCount++;
+      if (state.timerLastTick === null) {
+        if (completedChunks > 0) {
+          state.elapsedSeconds += Math.max(0, performance.now() - requestedAt) / 1000;
+          updateTimerDisplay();
+        }
+        startTimer();
+      }
+    };
     const abortOnFailure = () => {
-      if (session !== voiceSession) return;
+      if (session !== voiceSession || ended) return;
+      ended = true;
       syncPlaybackElapsed();
       updateTimerDisplay();
       haltSpeechEngines();
@@ -2179,64 +2259,74 @@
       stopTimer();
       renderTranscriptLists();
       updatePlaybackUI();
+      showToast('⚠️ 播放未正常完成，請再按播放，完整聽完後才能解鎖第二關。');
     };
-    function finishFullPlayback() {
-      if (voiceSession !== session) return;
+    const finishFullPlayback = () => {
+      if (session !== voiceSession || ended) return;
+      ended = true;
       syncPlaybackElapsed();
       updateTimerDisplay();
-      // A complete listen requires all paragraphs to end naturally in sequence.
-      // Stopping or switching voices cancels the session and never counts.
-      if (index === 0 && completedParagraphs === paragraphs.length) {
-        state.s1FullListenCount++;
-      }
+      if (index === 0 && countedFirstStart) state.s1FullListenCount++;
+      state.s1CompletedSentences = allSentences.length;
+      state.s1ProgressChars = s1TotalSpeechChars;
       state.isPlaying = false;
       state.isPaused = false;
       state.currentSentenceIndex = -1;
       stopTimer();
       renderTranscriptLists();
       updatePlaybackUI();
-      progressBar.style.width = '100%';
-      statusText.textContent = '播報完畢';
-      showToast('TOEIC Part 4 職場廣播已播放完畢！');
-    }
-    // All speak() calls happen in the original click, not in the onend event.
-    paragraphs.forEach((para, p) => {
-      const sent = para.sentences;
-      const message = sent.map(s => s.text).join(' ');
-      const offsets = [];
-      let cursor = 0;
-      sent.forEach(sentence => {
-        offsets.push({ id: sentence.id, offset: cursor });
-        cursor += sentence.text.length + 1;
-      });
-      speakNative(message, {
+      statusText.textContent = '播報完畢（完整聆聽已記錄）';
+      showToast('✅ 晨會公告已完整播放！請完成三題作答以解鎖第二關。');
+    };
+
+    speechChunks.forEach((chunk, i) => {
+      speakNative(chunk.text, {
         rate: state.playbackRate,
-        startupCheck: p === 0,
+        startupCheck: i === 0,
+        // Certain native engines omit onstart on queued subsequent chunks.
+        allowEndWithoutStart: true,
         onStart: () => {
-          if (session !== voiceSession) return;
-          if (!countedFirstStart) {
-            countedFirstStart = true;
-            // A silent/blocked speech attempt must NOT consume a listen.
-            if (!clearedStages[3]) state.s1ListenCount++;
-            startTimer();
-          }
-          state.currentSentenceIndex = sent[0].id;
+          if (session !== voiceSession || ended) return;
+          markPlaybackStarted();
+          state.currentSentenceIndex = chunk.firstId;
+          state.s1ProgressChars = Math.max(state.s1ProgressChars, chunk.progressStart);
           renderTranscriptLists();
           updatePlaybackUI();
         },
         onBoundary: charIndex => {
-          if (session !== voiceSession) return;
-          const active = offsets.filter(o => o.offset <= charIndex).pop();
-          if (active && active.id !== state.currentSentenceIndex) {
-            state.currentSentenceIndex = active.id;
+          if (session !== voiceSession || ended) return;
+          // Ignore out-of-range/unsupported boundary reports. A proper word
+          // boundary tells us which sentence is actually being spoken.
+          if (!Number.isFinite(charIndex) || charIndex < 0 || charIndex >= chunk.text.length) return;
+          state.s1ProgressChars = Math.max(state.s1ProgressChars,
+            chunk.progressStart + charIndex);
+          updateStage1ProgressBar();
+          let sentenceId = chunk.firstId;
+          for (const pos of chunk.positions) {
+            if (charIndex < pos.start) break;
+            sentenceId = pos.id;
+          }
+          // Boundary event streams are not guaranteed on all mobile engines.
+          // Prevent a stale/duplicate callback from moving the display backward.
+          if (sentenceId > state.currentSentenceIndex) {
+            markPlaybackStarted();
+            state.currentSentenceIndex = sentenceId;
             renderTranscriptLists();
             updatePlaybackUI();
           }
         },
         onEnd: () => {
-          if (session !== voiceSession) return;
-          completedParagraphs++;
-          if (p === paragraphs.length - 1) finishFullPlayback();
+          if (session !== voiceSession || ended) return;
+          completedChunks++;
+          if (!countedFirstStart) markPlaybackStarted();
+          state.s1CompletedSentences = Math.max(state.s1CompletedSentences, chunk.lastId + 1);
+          state.s1ProgressChars = Math.max(state.s1ProgressChars,
+            chunk.progressStart + chunk.text.length);
+          // Display the paragraph's last sentence, not a temporary waiting
+          // message, until the next paragraph actually starts speaking.
+          state.currentSentenceIndex = chunk.lastId;
+          updatePlaybackUI();
+          if (i === speechChunks.length - 1) finishFullPlayback();
         },
         onFailure: abortOnFailure
       });
@@ -2253,6 +2343,8 @@
     state.isPaused = false;
     state.currentSentenceIndex = -1;
     state.elapsedSeconds = 0;
+    state.s1CompletedSentences = 0;
+    state.s1ProgressChars = 0;
     stopTimer();
     updateTimerDisplay();
     renderTranscriptLists();
@@ -3025,7 +3117,6 @@
       <div class="s3-submetrics"><span>整句辨識吻合度：${result.coverage}%</span><span>連音關鍵詞辨識率：${result.linkedCoverage}%</span><span>通關標準：80 分＋關鍵詞 80%</span></div>
       <div style="font-size:13px"><strong>本次系統辨識：</strong>「${s3Escape(spokenText)}」</div>
       <div class="s3-feedback-focus"><strong>💡 本次所有可改善的位置（根據字詞辨識）</strong><div style="margin-top:5px">${result.focus}</div></div>
-      <div style="font-size:12px;color:#64748b;margin-top:10px">此為語音轉文字比對的練習分數，不能單憑此分數判定實際連音、語調或口音是否正確。</div>
     `;
     if(result.passed) {
       again.textContent='🔁 想更流暢？再挑戰一次（選擇性）';
@@ -3219,6 +3310,8 @@
     xp = 0;
     state.s1ListenCount = 0;
     state.s1FullListenCount = 0;
+    state.s1CompletedSentences = 0;
+    state.s1ProgressChars = 0;
     state.playbackRate = 1.0;
     document.querySelectorAll('.speed-btn').forEach(b =>
       b.classList.toggle('active', Number(b.dataset.rate) === 1.0));
